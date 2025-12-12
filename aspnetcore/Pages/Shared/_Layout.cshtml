@@ -1,0 +1,50 @@
+﻿@using Microsoft.Extensions.Configuration
+@using ServiceStack
+@using ServiceStack.Mvc
+@using rssnews
+@using rssnews.Models
+@using InertiaCore
+@using InertiaCore.Utils
+@using Vite.AspNetCore
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Vite.AspNetCore
+@inherits Microsoft.AspNetCore.Mvc.Razor.RazorPage<TModel>
+@inject IConfiguration Configuration
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnvironment
+@inject IViteManifest Manifest
+<!DOCTYPE html>
+<html lang="th" data-theme="light"> <!-- เพิ่ม data-theme สำหรับ daisyUI -->
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="description" content="ระบบข่าวสารและกิจกรรม มหาวิทยาลัยศรีนครินทรวิโรฒ">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta property="og:title" content="@ViewData["Title"]">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/svg" href="/img/logo.svg"> <!-- ควรใช้ path จาก root -->
+    <link rel="alternate" type="application/rss+xml" title="RSS"
+        href="@(Configuration["AppSettings:PublicBaseUrl"] ?? "/feed.xml")" />
+    @if (WebHostEnvironment.IsDevelopment())
+    {
+        <script type="module" src="http://localhost:5173/@@vite/client"></script>
+        <script type="module" src="http://localhost:5173/hub/main.js"></script>
+    }
+    else
+    {
+
+        Vite.Input("hub/main.js");
+    }
+    <style>
+        html {
+            scroll-padding-top: 5rem
+        }
+    </style>
+    <title>@ViewData["Title"]</title>
+    @Inertia.Head(Model)
+</head>
+
+<body>
+    @Inertia.Html(Model) <!-- *** สำคัญมาก: เพิ่มส่วนนี้เข้าไป *** -->
+</body>
+
+</html>

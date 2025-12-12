@@ -1,0 +1,4 @@
+obj\Debug\net9.0/Rss.cs \
+obj\Debug\net9.0/RssGrpc.cs: C:/Users/HP/.nuget/packages/grpc.tools/2.70.0/build/native/include/google/protobuf/timestamp.proto\
+ C:/Users/HP/.nuget/packages/grpc.tools/2.70.0/build/native/include/google/protobuf/empty.proto\
+ ../protobuf/rss.proto

@@ -1,0 +1,271 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\docker-rss\\aspnetcore\\rssnews.csproj": {}
+  },
+  "projects": {
+    "D:\\docker-rss\\aspnetcore\\rssnews.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\docker-rss\\aspnetcore\\rssnews.csproj",
+        "projectName": "rssnews",
+        "projectPath": "D:\\docker-rss\\aspnetcore\\rssnews.csproj",
+        "packagesPath": "C:\\Users\\HP\\.nuget\\packages\\",
+        "outputPath": "D:\\docker-rss\\aspnetcore\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\HP\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "AspNetCore.HealthChecks.SqlServer": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "AspNetCore.InertiaCore": {
+              "target": "Package",
+              "version": "[0.0.9, )"
+            },
+            "Google.Protobuf": {
+              "target": "Package",
+              "version": "[3.31.0, )"
+            },
+            "Grpc.AspNetCore": {
+              "target": "Package",
+              "version": "[2.70.0, )"
+            },
+            "Grpc.AspNetCore.Web": {
+              "target": "Package",
+              "version": "[2.70.0, )"
+            },
+            "Grpc.Net.Client": {
+              "target": "Package",
+              "version": "[2.70.0, )"
+            },
+            "Grpc.Net.Client.Web": {
+              "target": "Package",
+              "version": "[2.70.0, )"
+            },
+            "Grpc.Net.ClientFactory": {
+              "target": "Package",
+              "version": "[2.70.0, )"
+            },
+            "Grpc.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.70.0, )"
+            },
+            "HotChocolate.ApolloFederation": {
+              "target": "Package",
+              "version": "[15.1.7, )"
+            },
+            "HotChocolate.AspNetCore": {
+              "target": "Package",
+              "version": "[15.1.7, )"
+            },
+            "HotChocolate.Data.EntityFramework": {
+              "target": "Package",
+              "version": "[15.1.7, )"
+            },
+            "HotChocolate.Diagnostics": {
+              "target": "Package",
+              "version": "[15.1.7, )"
+            },
+            "HotChocolate.Execution": {
+              "target": "Package",
+              "version": "[15.1.7, )"
+            },
+            "HotChocolate.Server": {
+              "target": "Package",
+              "version": "[10.5.5, )"
+            },
+            "HotChocolate.Stitching": {
+              "target": "Package",
+              "version": "[13.9.14, )"
+            },
+            "HotChocolate.Subscriptions": {
+              "target": "Package",
+              "version": "[15.1.7, )"
+            },
+            "HotChocolate.Types": {
+              "target": "Package",
+              "version": "[15.1.7, )"
+            },
+            "HotChocolate.Utilities": {
+              "target": "Package",
+              "version": "[15.1.7, )"
+            },
+            "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Microsoft.Extensions.ApiDescription.Server": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Microsoft.Extensions.Diagnostics.HealthChecks": {
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "ServiceStack": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.Api.OpenApi": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.Client": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.Core": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.Extensions": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.GrpcClient": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.HttpClient": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.Kestrel": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.Mvc": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.OrmLite": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.OrmLite.SqlServer": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.ProtoBuf": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.Server": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.Text": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[9.0.4, )"
+            },
+            "Swashbuckle.AspNetCore.Swagger": {
+              "target": "Package",
+              "version": "[9.0.4, )"
+            },
+            "Swashbuckle.AspNetCore.SwaggerGen": {
+              "target": "Package",
+              "version": "[9.0.4, )"
+            },
+            "Swashbuckle.AspNetCore.SwaggerUI": {
+              "target": "Package",
+              "version": "[9.0.4, )"
+            },
+            "System.ServiceModel.Syndication": {
+              "target": "Package",
+              "version": "[9.0.5, )"
+            },
+            "Vite.AspNetCore": {
+              "target": "Package",
+              "version": "[2.4.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.307/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

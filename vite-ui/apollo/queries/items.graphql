@@ -1,0 +1,29 @@
+#import "../fragments/fragments.graphql"
+
+query GetAllItems($categoryId: Int) {
+    rssItems(categoryId: $categoryId) {
+        ...RssItemFields
+    }
+}
+
+query GetRssItem($id: String!) {
+    rssItem(id: $id) {
+        ...RssItemFields
+    }
+}
+
+mutation CreateItem($item: ItemInput!) {
+    addItem(item: $item) {
+        ...RssItemFields
+    }
+}
+
+mutation UpdateItem($id: String!, $item: ItemInput!) {
+    updateItem(id: $id, item: $item) {
+        ...RssItemFields
+    }
+}
+
+mutation DeleteItem($id: String!) {
+    deleteRssItem(id: $id)
+}

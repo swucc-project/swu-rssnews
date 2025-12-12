@@ -1,0 +1,10 @@
+@using InertiaCore
+@using InertiaCore.Utils
+@{
+    Layout = "/Pages/Shared/_Layout.cshtml";
+}
+
+<div id="app" data-page="@Json.Serialize(Model)">
+    @await Inertia.Html(Model)
+    @Vite.Input("hub/main.js")
+</div>

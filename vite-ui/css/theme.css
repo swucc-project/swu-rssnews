@@ -1,0 +1,778 @@
+/* ===== Font Faces ===== */
+@font-face {
+    font-family: 'THSarabun';
+    src: url('/fonts/THSarabun.eot');
+    src: url('/fonts/THSarabun.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/THSarabun.ttf') format('truetype'),
+        url('/fonts/THSarabun.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'THSarabun';
+    src: url('/fonts/THSarabun Bold.eot');
+    src: url('/fonts/THSarabun Bold.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/THSarabun Bold.ttf') format('truetype'),
+        url('/fonts/THSarabun Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'THSarabun';
+    src: url('/fonts/THSarabun Italic.eot');
+    src: url('/fonts/THSarabun Italic.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/THSarabun Italic.ttf') format('truetype'),
+        url('/fonts/THSarabun Italic.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'THSarabun';
+    src: url('/fonts/THSarabun BoldItalic.eot');
+    src: url('/fonts/THSarabun BoldItalic.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/THSarabun BoldItalic.ttf') format('truetype'),
+        url('/fonts/THSarabun BoldItalic.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'THSarabunNew';
+    src: url('/fonts/THSarabunNew.eot');
+    src: url('/fonts/THSarabunNew.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/THSarabunNew.ttf') format('truetype'),
+        url('/fonts/THSarabunNew.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'THSarabunNew';
+    src: url('/fonts/THSarabunNew Bold.eot');
+    src: url('/fonts/THSarabunNew Bold.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/THSarabunNew Bold.ttf') format('truetype'),
+        url('/fonts/THSarabunNew Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'THSarabunNew';
+    src: url('/fonts/THSarabunNew Italic.eot');
+    src: url('/fonts/THSarabunNew Italic.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/THSarabunNew Italic.ttf') format('truetype'),
+        url('/fonts/THSarabunNew Italic.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'THSarabunNew';
+    src: url('/fonts/THSarabunNew BoldItalic.eot');
+    src: url('/fonts/THSarabunNew BoldItalic.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/THSarabunNew BoldItalic.ttf') format('truetype'),
+        url('/fonts/THSarabunNew BoldItalic.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Srinakharinwirot';
+    src: url('/fonts/Srinakharinwirot-Regular.eot');
+    src: url('/fonts/Srinakharinwirot-Regular.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/Srinakharinwirot-Regular.ttf') format('truetype'),
+        url('/fonts/Srinakharinwirot-Regular.otf') format('opentype'),
+        url('/fonts/Srinakharinwirot-Regular.woff') format('woff'),
+        url('/fonts/Srinakharinwirot-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ===== Font Utility Classes ===== */
+.font-sarabun {
+    font-family: 'THSarabun', sans-serif;
+}
+
+.font-sarabun-new {
+    font-family: 'THSarabunNew', sans-serif;
+}
+
+.font-srinakharinwirot {
+    font-family: 'Srinakharinwirot', sans-serif;
+}
+
+/* ===== Body Default Font ===== */
+body {
+    font-family: 'THSarabunNew', 'THSarabun', sans-serif;
+}
+
+/* ===== Menu Bar Styles ===== */
+.menu-bar {
+    background-color: rgb(200, 32, 32);
+    color: white;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 18px;
+}
+
+.menu-bar a,
+.menu-bar .btn,
+.menu-bar li>a {
+    color: white;
+    font-family: 'THSarabunNew', sans-serif;
+}
+
+.menu-bar a:hover,
+.menu-bar .btn:hover,
+.menu-bar li>a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.menu-bar .active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: bold;
+}
+
+.menu-bar .btn-ghost {
+    color: white;
+}
+
+.menu-bar .btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Specific styles for horizontal menu */
+.menu-bar.horizontal {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Specific styles for vertical menu */
+.menu-bar.vertical {
+    border-right: 2px solid rgba(200, 32, 32, 0.2);
+}
+
+.menu-bar.vertical h3 {
+    color: rgb(200, 32, 32);
+    font-family: 'THSarabunNew', sans-serif;
+    font-weight: bold;
+}
+
+.menu-bar.vertical a {
+    color: #374151;
+}
+
+.menu-bar.vertical a:hover {
+    background-color: rgba(200, 32, 32, 0.1);
+    color: rgb(200, 32, 32);
+}
+
+.menu-bar.vertical .active {
+    background-color: rgba(200, 32, 32, 0.1);
+    color: rgb(200, 32, 32);
+    font-weight: bold;
+    border-left: 3px solid rgb(200, 32, 32);
+}
+
+/* ===== Alert Styles ===== */
+.alert {
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin-top: 1rem;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* ===== Button Styles ===== */
+.btn {
+    cursor: pointer;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-info {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #2563eb;
+}
+
+/* ===== Card Styles ===== */
+.card {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.card-title {
+    margin-bottom: 0.5rem;
+}
+
+/* ===== Container ===== */
+.container {
+    max-width: 1200px;
+}
+
+/* ===== Form Elements ===== */
+.input,
+.textarea,
+.select {
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ===== Login Container ===== */
+.login-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Typography ===== */
+h1 {
+    text-align: center;
+    color: #000000;
+    margin-bottom: 20px;
+}
+
+form div {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #000000;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 28px;
+}
+
+/* ===== Input Styles ===== */
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* ===== Button Overrides ===== */
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #74acdc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 16px;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* ===== Error Message ===== */
+.error-message {
+    background-color: #ff0000;
+    color: white;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    text-align: center;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 18px;
+}
+
+/* ===== Sign In Styles ===== */
+.signin-canvas {
+    background-color: #ffffff;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    padding: 2.5rem;
+    max-width: 450px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.signin-canvas .signin-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.signin-canvas .signin-logo img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+}
+
+.signin-canvas .signin-title {
+    text-align: center;
+    font-family: 'Srinakharinwirot', sans-serif;
+    font-size: 28px;
+    font-weight: bold;
+    color: #000000;
+    margin-bottom: 2rem;
+}
+
+.signin-canvas .signin-form {
+    width: 100%;
+}
+
+.signin-canvas .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.signin-canvas label {
+    display: block;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.signin-canvas input[type="text"],
+.signin-canvas input[type="password"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 18px;
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.signin-canvas input[type="text"]:focus,
+.signin-canvas input[type="password"]:focus {
+    outline: none;
+    border-color: rgb(200, 32, 32);
+    box-shadow: 0 0 0 3px rgba(200, 32, 32, 0.1);
+}
+
+.signin-canvas .btn-signin {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background-color: rgb(148, 200, 255);
+    color: white;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1.5rem;
+}
+
+.signin-canvas .btn-signin:hover {
+    background-color: rgb(120, 180, 245);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(148, 200, 255, 0.4);
+}
+
+.signin-canvas .btn-signin:active {
+    transform: translateY(0);
+}
+
+.signin-canvas .btn-signin:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.signin-canvas .btn-signin.loading {
+    position: relative;
+    color: transparent;
+}
+
+.signin-canvas .btn-signin.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spinner 0.6s linear infinite;
+}
+
+@keyframes spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.signin-canvas .alert {
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.25rem;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 18px;
+}
+
+.signin-canvas .alert-error {
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.signin-canvas .alert-error svg {
+    width: 20px;
+    height: 20px;
+    stroke: #991b1b;
+}
+
+/* Background for signin page */
+.signin-background {
+    background-color: rgb(215, 215, 215);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .signin-canvas {
+        padding: 2rem 1.5rem;
+    }
+
+    .signin-canvas .signin-logo img {
+        width: 100px;
+        height: 100px;
+    }
+
+    .signin-canvas .signin-title {
+        font-size: 24px;
+    }
+}
+
+.news-archive {
+    background-color: rgb(255, 255, 255);
+    color: rgb(0, 0, 128);
+    font-family: 'THSarabunNew', sans-serif;
+    padding: 2rem;
+    border-radius: 0.5rem;
+}
+
+.news-archive h1,
+.news-archive h2,
+.news-archive h3 {
+    color: rgb(0, 0, 128);
+    font-family: 'THSarabunNew', sans-serif;
+}
+
+.news-archive .news-item {
+    border: 1px solid rgba(0, 0, 128, 0.2);
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.news-archive .news-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 128, 0.15);
+    border-color: rgb(0, 0, 128);
+}
+
+.news-archive .news-title {
+    color: rgb(0, 0, 128);
+    font-weight: bold;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.news-archive .news-title:hover {
+    color: rgb(200, 32, 32);
+}
+
+/* ===== Brief Explanation Styles ===== */
+.brief-explanation {
+    background-color: rgb(255, 200, 240);
+    color: rgb(34, 139, 34);
+    font-family: 'THSarabunNew', sans-serif;
+    padding: 1.5rem;
+    border-radius: 0.375rem;
+    margin-top: 1rem;
+    line-height: 1.8;
+}
+
+.brief-explanation h4,
+.brief-explanation h5 {
+    color: rgb(34, 139, 34);
+    font-weight: bold;
+    margin-bottom: 0.75rem;
+}
+
+.brief-explanation p {
+    margin-bottom: 0.5rem;
+}
+
+.brief-explanation a {
+    color: rgb(0, 0, 200);
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+.brief-explanation a:hover {
+    color: rgb(200, 32, 32);
+}
+
+.brief-explanation .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.brief-explanation .detail-label {
+    font-weight: bold;
+    color: rgb(0, 100, 0);
+}
+
+/* ===== Accordion Override for News ===== */
+.news-accordion .collapse {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 128, 0.2);
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.news-accordion .collapse-title {
+    color: rgb(0, 0, 128);
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 1.25rem;
+    font-weight: bold;
+    padding: 1rem 1.25rem;
+}
+
+.news-accordion .collapse-title:hover {
+    color: rgb(200, 32, 32);
+    background-color: rgba(0, 0, 128, 0.05);
+}
+
+.news-accordion .collapse-content {
+    padding: 0 1.25rem 1rem;
+}
+
+.news-accordion .collapse-open {
+    border-color: rgb(0, 0, 128);
+    box-shadow: 0 4px 12px rgba(0, 0, 128, 0.15);
+}
+
+/* ===== Category Filter Styles ===== */
+.category-filter {
+    background-color: rgb(245, 245, 250);
+    border: 2px solid rgba(0, 0, 128, 0.3);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.category-filter label {
+    color: rgb(0, 0, 128);
+    font-family: 'THSarabunNew', sans-serif;
+    font-weight: bold;
+    font-size: 1.125rem;
+}
+
+.category-filter select {
+    border-color: rgba(0, 0, 128, 0.3);
+    color: rgb(0, 0, 128);
+    font-family: 'THSarabunNew', sans-serif;
+}
+
+.category-filter select:focus {
+    border-color: rgb(0, 0, 128);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 0, 128, 0.1);
+}
+
+/* ===== Loading & Empty States ===== */
+.news-archive .loading-state,
+.news-archive .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: rgb(0, 0, 128);
+}
+
+.news-archive .empty-state svg {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    color: rgba(0, 0, 128, 0.5);
+}
+
+/* ===== Table Outline Styles for Forms ===== */
+.table-outline {
+    background-color: rgb(255, 200, 240);
+    color: rgb(0, 0, 0);
+    font-family: 'THSarabunNew', sans-serif;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.table-outline th,
+.table-outline td {
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.table-outline th {
+    background-color: rgb(255, 180, 230);
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+    font-size: 1.125rem;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.table-outline td {
+    background-color: rgb(255, 200, 240);
+    vertical-align: middle;
+}
+
+.table-outline input[type="text"],
+.table-outline input[type="url"],
+.table-outline input[type="date"],
+.table-outline textarea,
+.table-outline select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 0.375rem;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 1.125rem;
+    color: rgb(0, 0, 0);
+    background-color: white;
+    transition: all 0.3s ease;
+}
+
+.table-outline input[type="text"]:focus,
+.table-outline input[type="url"]:focus,
+.table-outline input[type="date"]:focus,
+.table-outline textarea:focus,
+.table-outline select:focus {
+    outline: none;
+    border-color: rgb(200, 32, 32);
+    box-shadow: 0 0 0 3px rgba(200, 32, 32, 0.1);
+}
+
+.table-outline textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.table-outline .required-label::after {
+    content: ' *';
+    color: rgb(200, 32, 32);
+    font-weight: bold;
+}
+
+.table-outline .form-actions {
+    background-color: rgb(255, 180, 230);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.table-outline .btn-submit {
+    background-color: rgb(148, 200, 255);
+    color: white;
+    font-family: 'THSarabunNew', sans-serif;
+    font-size: 1.25rem;
+    font-weight: bold;
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.table-outline .btn-submit:hover {
+    background-color: rgb(120, 180, 245);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(148, 200, 255, 0.4);
+}
+
+.table-outline .btn-submit:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Vue Datepicker custom styles */
+.table-outline .dp__input {
+    font-family: 'THSarabunNew', sans-serif !important;
+    font-size: 1.125rem !important;
+    padding: 0.75rem !important;
+    border: 2px solid rgba(0, 0, 0, 0.2) !important;
+    border-radius: 0.375rem !important;
+}
+
+.table-outline .dp__input:focus {
+    border-color: rgb(200, 32, 32) !important;
+    box-shadow: 0 0 0 3px rgba(200, 32, 32, 0.1) !important;
+}
+
+/* ===== Copyright Footer ===== */
+.copyright {
+    background-color: rgb(200, 32, 32);
+    color: white;
+    font-family: 'Srinakharinwirot', sans-serif;
+    font-size: 18px;
+}

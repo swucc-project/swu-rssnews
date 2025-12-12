@@ -1,0 +1,91 @@
+name: swu-rssnews
+
+services:
+  aspdotnetweb:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ADD_NEW_MIGRATION=false
+      - MIGRATION_NAME=SWUNewsEvents
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./aspnetcore:/app/aspnetcore:cached
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5000/graphql -H 'Content-Type: application/json' -H 'X-Allow-Introspection: true' -d '{\"query\":\"{ __typename }\"}'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 90s  # เพิ่มเวลารอให้ backend startup เสร็จสมบูรณ์
+
+  frontend:
+    environment:
+      - NODE_ENV=development
+      - WAIT_FOR_BACKEND=true
+      # Server-side URLs (Docker network)
+      - VITE_API_URL=http://aspdotnetweb:5000
+      - VITE_GRAPHQL_ENDPOINT=http://aspdotnetweb:5000/graphql
+      - VITE_GRAPHQL_WS_URL=ws://aspdotnetweb:5000/graphql-ws
+      - VITE_GRPC_ENDPOINT=http://aspdotnetweb:5000/grpc
+      # Client-side URLs (Browser)
+      - VITE_PUBLIC_API_URL=http://localhost:5000
+      - VITE_PUBLIC_GRAPHQL_ENDPOINT=http://localhost:5000/graphql
+      - VITE_PUBLIC_GRAPHQL_WS_URL=ws://localhost:5000/graphql-ws
+      - VITE_PUBLIC_GRPC_ENDPOINT=http://localhost:5000/grpc
+      # HMR Configuration
+      - VITE_HMR_HOST=localhost
+      - VITE_HMR_PROTOCOL=ws
+      - VITE_HMR_PORT=5173
+      - NODE_OPTIONS=--max-old-space-size=4096
+      # ✅ Timeout settings
+      - BACKEND_WAIT_TIMEOUT=150  # 2.5 minutes
+      - GRAPHQL_WAIT_TIMEOUT=180  # 3 minutes
+    ports:
+      - "127.0.0.1:5173:5173"
+      - "127.0.0.1:13714:13714"
+      - "127.0.0.1:24678:24678"
+    volumes:
+      - ./vite-ui:/app:cached
+      - nodejs-libraries:/app/node_modules
+      - vite-cache:/app/node_modules/.vite
+    # ✅ รอให้ backend healthy จริงๆ
+    depends_on:
+      aspdotnetweb:
+        condition: service_healthy
+        restart: true  # รอ backend restart ด้วย
+    # ✅ ปรับปรุง healthcheck
+    healthcheck:
+      test: |
+        # ตรวจสอบ Vite dev server
+        curl -f http://localhost:5173 >/dev/null 2>&1 || exit 1
+        # ตรวจสอบ SSR server
+        curl -f http://localhost:13714/health >/dev/null 2>&1 || exit 1
+        # ตรวจสอบว่า generated files มีจริง (optional check)
+        test -f /app/apollo/generated/graphql.ts || exit 0
+      interval: 30s
+      timeout: 15s
+      retries: 20
+      start_period: 360s  # 6 minutes - เพิ่มเวลาสำหรับ GraphQL generation
+
+  web-server:
+    ports:
+      - "8080:80"
+    volumes:
+      - ./host/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./host/web.conf:/etc/nginx/conf.d/default.conf:ro
+    # ✅ รอให้ทั้ง backend และ frontend พร้อม
+    depends_on:
+      aspdotnetweb:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+  mssql:
+    ports:
+      - "127.0.0.1:1433:1433"
+
+volumes:
+  nodejs-libraries:
+    driver: local
+  vite-cache:
+    driver: local

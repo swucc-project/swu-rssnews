@@ -1,0 +1,102 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🚀 Quick Start",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                ".\\scripts\\quick-start.ps1"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "🛑 Stop All",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                ".\\scripts\\stop-entire.ps1"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "🏥 Health Check",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                ".\\scripts\\health-check.ps1",
+                "-Detailed"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "📋 View Logs",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                ".\\scripts\\docker-maintenance.ps1",
+                "-Action",
+                "Logs",
+                "-Follow"
+            ],
+            "problemMatcher": [],
+            "isBackground": true
+        },
+        {
+            "label": "🔧 Generate All Code",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                ".\\scripts\\generate-whole-code.ps1"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "🗄️ Database Shell",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                ".\\scripts\\development-utils.ps1",
+                "-Tool",
+                "db"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "🧹 Docker Cleanup",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                ".\\scripts\\docker-cleanup.ps1",
+                "-Mode",
+                "Safe"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

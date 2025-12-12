@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "🐛 Attach to Backend",
+            "type": "coreclr",
+            "request": "attach",
+            "processName": "dotnet",
+            "justMyCode": false,
+            "requireExactSource": false
+        },
+        {
+            "name": "🐛 Attach to Frontend",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/vite-ui",
+            "sourceMaps": true
+        },
+        {
+            "name": "🐛 Debug SSR Server",
+            "type": "node",
+            "request": "attach",
+            "port": 9229,
+            "address": "localhost",
+            "localRoot": "${workspaceFolder}/vite-ui",
+            "remoteRoot": "/app",
+            "sourceMaps": true
+        }
+    ]
+}

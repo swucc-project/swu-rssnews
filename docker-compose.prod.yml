@@ -1,0 +1,78 @@
+name: swu-rssnews
+
+services:
+  aspdotnetweb:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - ADD_NEW_MIGRATION=false
+    env_file:
+      - .env.production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./vite-ui/Dockerfile
+      target: production
+    environment:
+      - NODE_ENV=production
+      - SSR_PORT=13714
+      # Server-side URLs (Docker network)
+      - VITE_API_URL=http://aspdotnetweb:5000
+      - VITE_GRAPHQL_ENDPOINT=http://aspdotnetweb:5000/graphql
+      - VITE_GRAPHQL_WS_URL=ws://aspdotnetweb:5000/graphql-ws
+      - VITE_GRPC_ENDPOINT=http://aspdotnetweb:5000/grpc
+      # Client-side URLs (Public)
+      - VITE_PUBLIC_API_URL=https://news.swu.ac.th
+      - VITE_PUBLIC_GRAPHQL_ENDPOINT=https://news.swu.ac.th/graphql
+      - VITE_PUBLIC_GRAPHQL_WS_URL=wss://news.swu.ac.th/graphql-ws
+      - VITE_PUBLIC_GRPC_ENDPOINT=https://news.swu.ac.th/grpc
+      - TZ=Asia/Bangkok
+    expose:
+      - "13714"
+    volumes:
+      # ✅ Production ไม่ mount source code
+      - frontend-libraries:/app/wwwroot/volume:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:13714/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  web-server:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  mssql:
+    environment:
+      - MSSQL_MEMORY_LIMIT_MB=4096
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
