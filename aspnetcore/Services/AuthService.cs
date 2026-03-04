@@ -14,26 +14,24 @@ namespace rssnews.Services
         public List<string> Roles { get; set; } = new();
     }
 
-    public class CustonUserSession : AuthUserSession
-    {
-        public string? BuasriID { get; set; } = "";
-    }
+    // ✅ ลบ CustonUserSession ออก เพราะ CustomUserSession ถูกประกาศใน Configure.Auth.cs แล้ว
+    // ถ้าต้องการเพิ่ม field ให้ไปเพิ่มที่ Configure.Auth.cs แทน
+
     public class AuthService : Service
     {
         public object Get(CheckAuth request)
         {
             var session = SessionAs<CustomUserSession>();
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            // ✅ ใช้ null-conditional operators เพื่อความปลอดภัย
             return new CheckAuthResponse
             {
-                IsAuthenticated = session.IsAuthenticated,
-                UserId = session.UserAuthId,
-                UserName = session.UserName,
-                DisplayName = session.DisplayName,
-                Roles = session.Roles ?? new List<string>()
+                IsAuthenticated = session?.IsAuthenticated ?? false,
+                UserId = session?.UserAuthId,
+                UserName = session?.UserName,
+                DisplayName = session?.DisplayName,
+                Roles = session?.Roles ?? new List<string>()
             };
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
     }
 }

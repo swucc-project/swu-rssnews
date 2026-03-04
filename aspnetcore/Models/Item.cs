@@ -19,16 +19,20 @@ namespace rssnews.Models
         [Column("Description")]
         public string Description { get; set; } = "";
 
-        // CHANGED: เปลี่ยนชื่อ Property เป็น PascalCase ตามมาตรฐาน C#
-        [Column("Published_Date")]
+        // ✅ FIX: ต้องตรงกับ DbContext configuration
+        [Column("PublishedDate")]  // เปลี่ยนจาก "Published_Date"
         public DateTime PublishedDate { get; set; }
 
         [Column("CategoryID")]
         public int CategoryID { get; set; }
-        public Category Category { get; set; } = null!; // Navigation Property
+
+        [ForeignKey("CategoryID")]
+        public Category? Category { get; set; }  // ✅ ใช้ nullable
 
         [Column("AuthorID")]
         public string AuthorID { get; set; } = "";
-        public Author Author { get; set; } = null!;
+
+        [ForeignKey("AuthorID")]
+        public Author? Author { get; set; }  // ✅ ใช้ nullable
     }
 }

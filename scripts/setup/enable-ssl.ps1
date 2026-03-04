@@ -2,16 +2,9 @@
 # Setup SSL certificates for swu-rssnews project
 
 param(
-    [Parameter(Mandatory=$false)]
     [string]$SourcePath = "D:\docker-rss\ssl",
-    
-    [Parameter(Mandatory=$false)]
     [string]$DestPath = ".\ssl",
-    
-    [Parameter(Mandatory=$false)]
     [switch]$Validate,
-    
-    [Parameter(Mandatory=$false)]
     [switch]$GenerateSelfSigned
 )
 
@@ -24,42 +17,29 @@ $RED = "`e[31m"
 $CYAN = "`e[36m"
 $NC = "`e[0m"
 
-Write-Host "${CYAN}🔐 SSL Certificate Setup${NC}`n"
-Write-Host "=" * 60
+Write-Host "${CYAN}🔒 SSL Certificate Setup${NC}`n"
+Write-Host ("=" * 60)
 
-# Function: Validate certificate files
-function Test-CertificateFiles {
-    param([string]$Path)
+# ✅ Function: Check if encryption.pem is a certificate or DH params
+function Test-PemFileType {
+    param([string]$FilePath)
     
-    Write-Host "${CYAN}🔍 Validating certificate files...${NC}"
+    if (-not (Test-Path $FilePath)) { return "notfound" }
     
-    $requiredFiles = @{
-        "Private Key" = @("*.key", "private.key")
-        "Certificate" = @("*.crt", "*.pem", "rss.crt")
-        "CSR" = @("*.csr", "rss.csr")
+    $content = Get-Content $FilePath -Raw
+    
+    if ($content -match "-----BEGIN CERTIFICATE-----") {
+        return "certificate"
     }
-    
-    $valid = $true
-    
-    foreach ($type in $requiredFiles.Keys) {
-        $patterns = $requiredFiles[$type]
-        $found = $false
-        
-        foreach ($pattern in $patterns) {
-            if (Test-Path (Join-Path $Path $pattern)) {
-                Write-Host "  ${GREEN}✅ $type found: $pattern${NC}"
-                $found = $true
-                break
-            }
-        }
-        
-        if (-not $found -and $type -ne "CSR") {
-            Write-Host "  ${RED}❌ $type not found${NC}"
-            $valid = $false
-        }
+    elseif ($content -match "-----BEGIN DH PARAMETERS-----") {
+        return "dhparam"
     }
-    
-    return $valid
+    elseif ($content -match "-----BEGIN .*PRIVATE KEY-----") {
+        return "privatekey"
+    }
+    else {
+        return "unknown"
+    }
 }
 
 # Function: Copy SSL files
@@ -71,40 +51,37 @@ function Copy-SSLFiles {
     
     Write-Host "${CYAN}📋 Copying SSL files...${NC}"
     
-    # Create destination directory
     if (-not (Test-Path $Destination)) {
         New-Item -Path $Destination -ItemType Directory -Force | Out-Null
         Write-Host "  ${GREEN}✅ Created directory: $Destination${NC}"
     }
     
-    # Copy files
     try {
         Copy-Item -Path "$Source\*" -Destination $Destination -Force
         Write-Host "  ${GREEN}✅ Files copied successfully${NC}"
         
-        # List copied files
         Write-Host "`n${YELLOW}Copied files:${NC}"
         Get-ChildItem $Destination | ForEach-Object {
             Write-Host "  📄 $($_.Name) ($([math]::Round($_.Length/1KB, 2)) KB)"
         }
         
         return $true
-    } catch {
+    }
+    catch {
         Write-Host "  ${RED}❌ Copy failed: $_${NC}"
         return $false
     }
 }
 
-# Function: Rename files to standard names
+# Function: Rename to standard names
 function Rename-SSLFiles {
     param([string]$Path)
     
-    Write-Host "`n${CYAN}🔄 Renaming files to standard names...${NC}"
+    Write-Host "`n${CYAN}📝 Renaming files to standard names...${NC}"
     
     $renames = @{
         "private.key" = "cert.key"
-        "rss.crt" = "cert.crt"
-        "rss.csr" = "cert.csr"
+        "rss.crt"     = "cert.crt"
     }
     
     foreach ($old in $renames.Keys) {
@@ -115,7 +92,8 @@ function Rename-SSLFiles {
         if (Test-Path $oldPath) {
             if (Test-Path $newPath) {
                 Write-Host "  ${YELLOW}⚠️  $new already exists, skipping${NC}"
-            } else {
+            }
+            else {
                 Rename-Item -Path $oldPath -NewName $new
                 Write-Host "  ${GREEN}✅ Renamed: $old → $new${NC}"
             }
@@ -123,183 +101,130 @@ function Rename-SSLFiles {
     }
 }
 
-# Function: Validate certificate with OpenSSL (if available)
-function Test-CertificateValidity {
+# ✅ Function: Handle encryption.pem intelligently
+function Initialize-EncryptionPem {
     param([string]$Path)
     
-    Write-Host "`n${CYAN}🔬 Validating certificate integrity...${NC}"
+    $encryptionPath = Join-Path $Path "encryption.pem"
     
-    $certFile = Get-ChildItem -Path $Path -Filter "*.crt" | Select-Object -First 1
-    $keyFile = Get-ChildItem -Path $Path -Filter "*.key" | Select-Object -First 1
-    
-    if (-not $certFile -or -not $keyFile) {
-        Write-Host "  ${YELLOW}⚠️  Certificate or key file not found${NC}"
-        return
-    }
-    
-    # Check if OpenSSL is available
-    if (Get-Command openssl -ErrorAction SilentlyContinue) {
-        Write-Host "  ${CYAN}Using OpenSSL for validation...${NC}"
-        
-        # Validate certificate
-        Write-Host "`n  ${YELLOW}Certificate Info:${NC}"
-        openssl x509 -in $certFile.FullName -text -noout | Select-String "Subject:|Issuer:|Not Before|Not After"
-        
-        # Validate key
-        Write-Host "`n  ${YELLOW}Key Validation:${NC}"
-        $certMD5 = openssl x509 -noout -modulus -in $certFile.FullName | openssl md5
-        $keyMD5 = openssl rsa -noout -modulus -in $keyFile.FullName | openssl md5
-        
-        if ($certMD5 -eq $keyMD5) {
-            Write-Host "  ${GREEN}✅ Certificate and key match${NC}"
-        } else {
-            Write-Host "  ${RED}❌ Certificate and key do NOT match${NC}"
-        }
-    } else {
-        Write-Host "  ${YELLOW}⚠️  OpenSSL not found, skipping validation${NC}"
-        Write-Host "  ${CYAN}Install OpenSSL for certificate validation${NC}"
-    }
-}
-
-# Function: Generate self-signed certificate
-function New-SelfSignedCertificate {
-    param([string]$Path)
-    
-    Write-Host "`n${CYAN}🔧 Generating self-signed certificate...${NC}"
-    
-    if (-not (Get-Command openssl -ErrorAction SilentlyContinue)) {
-        Write-Host "${RED}❌ OpenSSL not found. Please install OpenSSL.${NC}"
+    if (-not (Test-Path $encryptionPath)) {
+        Write-Host "`n${YELLOW}ℹ️  encryption.pem not found${NC}"
         return $false
     }
     
-    # Create directory
-    New-Item -Path $Path -ItemType Directory -Force | Out-Null
+    Write-Host "`n${CYAN}🔍 Analyzing encryption.pem...${NC}"
     
-    $certPath = Join-Path $Path "cert.crt"
-    $keyPath = Join-Path $Path "cert.key"
+    $fileType = Test-PemFileType -FilePath $encryptionPath
     
-    # Generate self-signed certificate
-    $cmd = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 " +
-           "-keyout `"$keyPath`" -out `"$certPath`" " +
-           "-subj `"/C=TH/ST=Bangkok/L=Bangkok/O=SWU/OU=IT/CN=news.swu.ac.th`""
-    
-    Invoke-Expression $cmd
-    
-    if (Test-Path $certPath -and Test-Path $keyPath) {
-        Write-Host "  ${GREEN}✅ Self-signed certificate generated${NC}"
-        Write-Host "  ${YELLOW}⚠️  This is for DEVELOPMENT only!${NC}"
-        return $true
-    } else {
-        Write-Host "  ${RED}❌ Certificate generation failed${NC}"
-        return $false
-    }
-}
-
-# Function: Update nginx configuration
-function Update-NginxConfig {
-    param([string]$SslPath)
-    
-    Write-Host "`n${CYAN}📝 Checking nginx configuration...${NC}"
-    
-    $nginxConfig = ".\host\web.conf"
-    
-    if (-not (Test-Path $nginxConfig)) {
-        Write-Host "  ${YELLOW}⚠️  nginx config not found at: $nginxConfig${NC}"
-        return
-    }
-    
-    $content = Get-Content $nginxConfig -Raw
-    
-    # Expected SSL paths in container
-    $expectedCertPath = "/etc/nginx/ssl/rssnews/cert.crt"
-    $expectedKeyPath = "/etc/nginx/ssl/rssnews/cert.key"
-    
-    Write-Host "  ${YELLOW}Expected SSL paths in nginx:${NC}"
-    Write-Host "    Certificate: $expectedCertPath"
-    Write-Host "    Key: $expectedKeyPath"
-    
-    if ($content -match "ssl_certificate\s+([^;]+);") {
-        Write-Host "  ${CYAN}Current: ssl_certificate $($matches)${NC}"
-    }
-    if ($content -match "ssl_certificate_key\s+([^;]+);") {
-        Write-Host "  ${CYAN}Current: ssl_certificate_key $($matches)${NC}"
-    }
-    
-    Write-Host "`n  ${GREEN}✅ Manual check required${NC}"
-    Write-Host "  ${YELLOW}Make sure nginx config matches your certificate filenames${NC}"
-}
-
-# Function: Test nginx configuration
-function Test-NginxConfig {
-    Write-Host "`n${CYAN}🧪 Testing nginx configuration...${NC}"
-    
-    try {
-        docker-compose exec web-server nginx -t 2>&1 | ForEach-Object {
-            if ($_ -match "successful") {
-                Write-Host "  ${GREEN}✅ nginx config is valid${NC}"
-            } elseif ($_ -match "failed|error") {
-                Write-Host "  ${RED}❌ nginx config error: $_${NC}"
-            } else {
-                Write-Host "  $_"
+    switch ($fileType) {
+        "certificate" {
+            Write-Host "  ${GREEN}✅ encryption.pem is an intermediate certificate${NC}"
+            
+            # สร้าง fullchain.crt
+            $certPath = Join-Path $Path "cert.crt"
+            $fullchainPath = Join-Path $Path "fullchain.crt"
+            
+            if (Test-Path $certPath) {
+                $cert = Get-Content $certPath -Raw
+                $intermediate = Get-Content $encryptionPath -Raw
+                
+                $fullchain = $cert.TrimEnd() + "`n" + $intermediate.TrimEnd()
+                Set-Content -Path $fullchainPath -Value $fullchain -NoNewline
+                
+                Write-Host "  ${GREEN}✅ Created fullchain.crt${NC}"
+                Write-Host "  ${CYAN}💡 Update nginx to use: ssl_certificate /etc/nginx/ssl/rssnews/fullchain.crt;${NC}"
+                return $true
             }
         }
-    } catch {
-        Write-Host "  ${YELLOW}⚠️  Cannot test nginx (container not running?)${NC}"
+        "dhparam" {
+            Write-Host "  ${YELLOW}⚠️  encryption.pem is DH Parameters (for key exchange)${NC}"
+            Write-Host "  ${CYAN}💡 Use in nginx: ssl_dhparam /etc/nginx/ssl/rssnews/encryption.pem;${NC}"
+            return $false
+        }
+        "privatekey" {
+            Write-Host "  ${RED}❌ encryption.pem contains a PRIVATE KEY - should not be named 'encryption'${NC}"
+            Write-Host "  ${YELLOW}💡 Rename it to cert.key if this is your certificate key${NC}"
+            return $false
+        }
+        "unknown" {
+            Write-Host "  ${YELLOW}⚠️  Cannot determine encryption.pem type${NC}"
+            Write-Host "  ${CYAN}File content preview:${NC}"
+            Get-Content $encryptionPath -First 5 | ForEach-Object { Write-Host "    $_" }
+            return $false
+        }
+        default {
+            Write-Host "  ${RED}❌ encryption.pem not found${NC}"
+            return $false
+        }
     }
 }
 
 # Main execution
 try {
     if ($GenerateSelfSigned) {
-        # Generate self-signed certificate
-        if (New-SelfSignedCertificate -Path $DestPath) {
-            Update-NginxConfig -SslPath $DestPath
-        }
-    } else {
-        # Validate source
-        if (-not (Test-Path $SourcePath)) {
-            Write-Host "${RED}❌ Source path not found: $SourcePath${NC}"
-            exit 1
-        }
-        
-        # Validate files in source
-        if (-not (Test-CertificateFiles -Path $SourcePath)) {
-            Write-Host "${RED}❌ Required certificate files not found${NC}"
-            exit 1
-        }
-        
-        # Copy files
-        if (-not (Copy-SSLFiles -Source $SourcePath -Destination $DestPath)) {
-            exit 1
-        }
-        
-        # Rename to standard names
-        Rename-SSLFiles -Path $DestPath
-        
-        # Validate certificate
-        if ($Validate) {
-            Test-CertificateValidity -Path $DestPath
-        }
-        
-        # Update nginx config
-        Update-NginxConfig -SslPath $DestPath
+        Write-Host "${CYAN}🔧 Generating self-signed certificate...${NC}"
+        Write-Host "${YELLOW}⚠️  Not implemented in this script${NC}"
+        Write-Host "${CYAN}Use: mkcert -install && mkcert localhost 127.0.0.1${NC}"
+        exit 1
     }
     
-    # Test nginx config
-    Test-NginxConfig
+    # Validate source
+    if (-not (Test-Path $SourcePath)) {
+        Write-Host "${RED}❌ Source path not found: $SourcePath${NC}"
+        exit 1
+    }
     
-    Write-Host "`n" -NoNewline
-    Write-Host "=" * 60 -ForegroundColor Green
+    # Copy files
+    if (-not (Copy-SSLFiles -Source $SourcePath -Destination $DestPath)) {
+        exit 1
+    }
+    
+    # Rename to standard names
+    Rename-SSLFiles -Path $DestPath
+    
+    # ✅ Handle encryption.pem
+    $hasFullchain = Initialize-EncryptionPem -Path $DestPath
+
+    if (-not $hasFullchain) {
+        # Fallback: If no intermediate chain, use cert.crt as fullchain.crt
+        Copy-Item -Path "$DestPath\cert.crt" -Destination "$DestPath\fullchain.crt" -Force
+        Write-Host "  ${YELLOW}⚠️  No intermediate certificate found.${NC}"
+        Write-Host "  ${GREEN}✅ Created fullchain.crt using cert.crt (Leaf only)${NC}"
+        $hasFullchain = $true
+    }
+    
+    # Show final file structure
+    Write-Host "`n${CYAN}📂 Final SSL file structure:${NC}"
+    Get-ChildItem $DestPath | ForEach-Object {
+        $icon = switch -Wildcard ($_.Name) {
+            "*.key" { "🔑" }
+            "*.crt" { "📜" }
+            "*.pem" { "📋" }
+            default { "📄" }
+        }
+        Write-Host "  $icon $($_.Name)"
+    }
+    
+    Write-Host "`n$('=' * 60)" -ForegroundColor Green
     Write-Host "${GREEN}✅ SSL Setup Complete!${NC}"
-    Write-Host "=" * 60 -ForegroundColor Green
+    Write-Host "$('=' * 60)" -ForegroundColor Green
     
     Write-Host "`n${YELLOW}Next Steps:${NC}"
-    Write-Host "  1. Review nginx config: ${CYAN}.\host\web.conf${NC}"
+    Write-Host "  1. Update web.conf with correct certificate paths"
+    
+    if ($hasFullchain) {
+        Write-Host "     ${CYAN}ssl_certificate /etc/nginx/ssl/rssnews/fullchain.crt;${NC}"
+    }
+    else {
+        Write-Host "     ${CYAN}ssl_certificate /etc/nginx/ssl/rssnews/cert.crt;${NC}"
+    }
+    
+    Write-Host "     ${CYAN}ssl_certificate_key /etc/nginx/ssl/rssnews/cert.key;${NC}"
     Write-Host "  2. Restart nginx: ${CYAN}docker-compose restart web-server${NC}"
     Write-Host "  3. Test HTTPS: ${CYAN}https://localhost${NC}"
     Write-Host ""
-    
-} catch {
+}
+catch {
     Write-Host "`n${RED}❌ Error: $_${NC}"
     exit 1
 }

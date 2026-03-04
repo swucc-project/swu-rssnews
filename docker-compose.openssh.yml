@@ -1,0 +1,34 @@
+name: swu-rssnews
+
+services:
+  ssh-server:
+    image: lscr.io/linuxserver/openssh-server:latest
+    container_name: openssh-server
+    hostname: ssh-server
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Bangkok
+      - PUBLIC_KEY_FILE=/config/.ssh/authorized_keys #
+      - SUDO_ACCESS=false
+      - PASSWORD_ACCESS=false
+      - USER_NAME=developer
+    volumes:
+      - ./ssh/config:/config
+      - ./ssh/keys:/keys:ro
+      # Mount host SSH keys (optional)
+      - ~/.ssh/swu-rssnews.pub:/config/.ssh/authorized_keys:ro
+    ports:
+      - "2222:2222"  # ✅ แก้ไข: ใช้ port 2222 เพื่อไม่ชนกับ SSH ของ host
+    networks:
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "sshd"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  backend-network:
+    driver: bridge

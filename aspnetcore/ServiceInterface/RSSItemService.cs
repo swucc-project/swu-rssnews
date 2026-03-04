@@ -1,11 +1,10 @@
-using ServiceStack;
-using SwuNews.gRPC;
+using SwuNews;
 using Grpc.Core;
 using Google.Protobuf.WellKnownTypes;
 
 namespace rssnews.ServiceInterface
 {
-    public class RSSItemService : SwuNews.gRPC.RSSItemService.RSSItemServiceBase
+    public class RSSItemService : SwuNews.RSSItemService.RSSItemServiceBase
     {
         private readonly ILogger<RSSItemService> _logger;
         private readonly IRSSItemRepository _rssItemRepository;
@@ -16,57 +15,58 @@ namespace rssnews.ServiceInterface
             _rssItemRepository = rssItemRepository;
         }
 
-        public override Task<Item> AddRSSItem(AddRSSItemRequest request, ServerCallContext context)
+        public override async Task<Item> AddRSSItem(AddRSSItemRequest request, ServerCallContext context)
         {
             _logger.LogInformation($"Adding RSS Item: {request.Title}");
 
-            var savedItem = _rssItemRepository.Add(request);
+            var domainItem = ToDomain(request);
+            var saved = _rssItemRepository.Add(domainItem);
 
-            if (savedItem == null)
-            {
-                throw new RpcException(new Status(StatusCode.Internal, "Failed to add RSS item."));
-            }
-
-            return Task.FromResult(savedItem);
+            return await Task.FromResult(ToGrpc(saved));
         }
 
-        public override Task<GetRSSItemResponse> GetRSSItems(Empty request, ServerCallContext context)
+        public override Task<GetRSSItemsResponse> GetRSSItems(Empty request, ServerCallContext context)
         {
-            _logger.LogInformation("Getting all RSS Items.");
+            var items = _rssItemRepository.GetAll()
+                    .Select(ToGrpc);
 
-            var rssItems = _rssItemRepository.GetAll();
-            var response = new GetRSSItemResponse();
-            response.Items.AddRange(rssItems);
+            var response = new GetRSSItemsResponse();
+            response.Items.AddRange(items);
 
             return Task.FromResult(response);
         }
 
-        public override Task<Item> GetRSSItemByID(GetRSSItemsRequest request, ServerCallContext context)
+        public override Task<Item> GetRSSItemByID(GetRSSItemRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Getting RSS Item by ID: {request.ItemId}");
-
             var item = _rssItemRepository.GetById(request.ItemId);
 
             if (item == null)
-            {
-                throw new RpcException(new Status(StatusCode.NotFound, $"Item with ID '{request.ItemId}' not found."));
-            }
+                throw new RpcException(new Status(StatusCode.NotFound, "Item not found"));
 
-            return Task.FromResult(item);
+            return Task.FromResult(ToGrpc(item));
         }
 
-        public override Task<Item> UpdateRSSItem(UpdateRSSItemRequest request, ServerCallContext context)
+        public override async Task<Item> UpdateRSSItem(UpdateRSSItemRequest request, ServerCallContext context)
         {
-            _logger.LogInformation($"Updating RSS Item ID: {request.ItemId}");
+            var domain = new rssnews.Models.Item
+            {
+                ItemID = request.ItemId,
+                Title = request.Title,
+                Link = request.Link,
+                Description = request.Description,
+                PublishedDate = request.PublishedDate != null
+                    ? request.PublishedDate.ToDateTime()
+                    : DateTime.UtcNow,
+                AuthorID = request.Author?.AuthorId ?? string.Empty,
+                CategoryID = request.Category?.Id ?? 0
+            };
 
-            var updatedItem = _rssItemRepository.Update(request);
+            var updatedItem = _rssItemRepository.Update(domain);
 
             if (updatedItem == null)
-            {
-                throw new RpcException(new Status(StatusCode.NotFound, $"RSS Item with ID {request.ItemId} not found for update."));
-            }
+                throw new RpcException(new Status(StatusCode.NotFound, "Item not found"));
 
-            return Task.FromResult(updatedItem);
+            return await Task.FromResult(ToGrpc(updatedItem));
         }
 
         public override Task<DeleteRSSItemResponse> DeleteRSSItem(DeleteRSSItemRequest request, ServerCallContext context)
@@ -91,6 +91,46 @@ namespace rssnews.ServiceInterface
 
             var response = new DeleteRSSItemResponse { Success = deleteSuccess };
             return Task.FromResult(response);
+        }
+
+        private rssnews.Models.Item ToDomain(AddRSSItemRequest request)
+        {
+            return new rssnews.Models.Item
+            {
+                Title = request.Title,
+                Link = request.Link,
+                Description = request.Description,
+                PublishedDate = request.PublishedDate != null
+                    ? request.PublishedDate.ToDateTime()
+                    : DateTime.UtcNow,
+                AuthorID = request.Author?.AuthorId ?? string.Empty,
+                CategoryID = request.Category?.Id ?? 0
+            };
+        }
+
+        private SwuNews.Item ToGrpc(rssnews.Models.Item domain)
+        {
+            var authorData = _rssItemRepository.GetAuthorById(domain.AuthorID);
+            var categoryName = _rssItemRepository.GetCategoryById(domain.CategoryID);
+            return new SwuNews.Item
+            {
+                ItemId = domain.ItemID,
+                Title = domain.Title,
+                Link = domain.Link,
+                Description = domain.Description,
+                PublishedDate = Timestamp.FromDateTime(DateTime.SpecifyKind(domain.PublishedDate, DateTimeKind.Utc)),
+                Author = new SwuNews.Author
+                {
+                    AuthorId = domain.AuthorID,
+                    Firstname = authorData?.firstname ?? "",
+                    Lastname = authorData?.lastname ?? ""
+                },
+                Category = new SwuNews.Category
+                {
+                    Id = domain.CategoryID,
+                    Name = categoryName ?? ""
+                }
+            };
         }
     }
 }

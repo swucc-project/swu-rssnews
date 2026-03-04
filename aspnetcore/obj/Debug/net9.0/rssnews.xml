@@ -6,15 +6,47 @@
     <members>
         <member name="M:rssnews.Controllers.HealthController.GetHealth">
             <summary>
-            ตรวจสอบสถานะของระบบ
+            ✅ Liveness probe - ตรวจสอบว่า process ยังทำงานอยู่
+            ใช้สำหรับ Docker healthcheck และ Kubernetes liveness probe
             </summary>
-            <returns>สถานะความพร้อมของระบบ</returns>
         </member>
-        <member name="M:rssnews.Controllers.HealthController.GetDatabaseHealth">
+        <member name="M:rssnews.Controllers.HealthController.GetReadiness">
             <summary>
-            ตรวจสอบสถานะการเชื่อมต่อฐานข้อมูล
+            ✅ Readiness probe - ตรวจสอบว่าพร้อมรับ traffic (รวมถึง database)
+            ใช้สำหรับ Kubernetes readiness probe และ load balancer
             </summary>
-            <returns>สถานะการเชื่อมต่อฐานข้อมูล</returns>
+        </member>
+        <member name="M:rssnews.Controllers.HealthController.GetDetailedHealth">
+            <summary>
+            ✅ Detailed health status - สำหรับ monitoring dashboard
+            </summary>
+        </member>
+        <member name="M:rssnews.Controllers.HealthController.GetStartup">
+            <summary>
+            ✅ Startup probe - ตรวจสอบว่า application เริ่มต้นเสร็จแล้ว
+            </summary>
+        </member>
+        <member name="M:rssnews.Controllers.HealthController.GetGraphQLHealth">
+            <summary>
+            ✅ GraphQL health check
+            </summary>
+        </member>
+        <member name="T:rssnews.Controllers.InertiaController">
+            <summary>
+            Base controller สำหรับ Inertia.js pages
+            </summary>
+        </member>
+        <member name="T:rssnews.Migrations.SWUNewsEvents">
+            <inheritdoc />
+        </member>
+        <member name="M:rssnews.Migrations.SWUNewsEvents.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:rssnews.Migrations.SWUNewsEvents.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:rssnews.Migrations.SWUNewsEvents.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
         </member>
         <member name="T:rssnews.Swagger.AcceptLanguageOperationFilter">
             <summary>
@@ -26,110 +58,110 @@
             Operation Filter สำหรับเพิ่มข้อมูล Authorization ใน Swagger UI
             </summary>
         </member>
-        <member name="T:SwuNews.gRPC.RssReflection">
+        <member name="T:SwuNews.RssReflection">
             <summary>Holder for reflection information generated from rss.proto</summary>
         </member>
-        <member name="P:SwuNews.gRPC.RssReflection.Descriptor">
+        <member name="P:SwuNews.RssReflection.Descriptor">
             <summary>File descriptor for rss.proto</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Item.ItemIdFieldNumber">
+        <member name="F:SwuNews.Item.ItemIdFieldNumber">
             <summary>Field number for the "item_id" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Item.TitleFieldNumber">
+        <member name="F:SwuNews.Item.TitleFieldNumber">
             <summary>Field number for the "title" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Item.LinkFieldNumber">
+        <member name="F:SwuNews.Item.LinkFieldNumber">
             <summary>Field number for the "link" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Item.DescriptionFieldNumber">
+        <member name="F:SwuNews.Item.DescriptionFieldNumber">
             <summary>Field number for the "description" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Item.PublishedDateFieldNumber">
+        <member name="F:SwuNews.Item.PublishedDateFieldNumber">
             <summary>Field number for the "published_date" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Item.CategoryFieldNumber">
+        <member name="F:SwuNews.Item.CategoryFieldNumber">
             <summary>Field number for the "category" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Item.AuthorFieldNumber">
+        <member name="F:SwuNews.Item.AuthorFieldNumber">
             <summary>Field number for the "author" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Category.IdFieldNumber">
+        <member name="F:SwuNews.Category.IdFieldNumber">
             <summary>Field number for the "id" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Category.NameFieldNumber">
+        <member name="F:SwuNews.Category.NameFieldNumber">
             <summary>Field number for the "name" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Author.AuthorIdFieldNumber">
+        <member name="F:SwuNews.Author.AuthorIdFieldNumber">
             <summary>Field number for the "author_id" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Author.FirstnameFieldNumber">
+        <member name="F:SwuNews.Author.FirstnameFieldNumber">
             <summary>Field number for the "firstname" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.Author.LastnameFieldNumber">
+        <member name="F:SwuNews.Author.LastnameFieldNumber">
             <summary>Field number for the "lastname" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.AddRSSItemRequest.TitleFieldNumber">
+        <member name="F:SwuNews.AddRSSItemRequest.TitleFieldNumber">
             <summary>Field number for the "title" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.AddRSSItemRequest.LinkFieldNumber">
+        <member name="F:SwuNews.AddRSSItemRequest.LinkFieldNumber">
             <summary>Field number for the "link" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.AddRSSItemRequest.DescriptionFieldNumber">
+        <member name="F:SwuNews.AddRSSItemRequest.DescriptionFieldNumber">
             <summary>Field number for the "description" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.AddRSSItemRequest.PublishedDateFieldNumber">
+        <member name="F:SwuNews.AddRSSItemRequest.PublishedDateFieldNumber">
             <summary>Field number for the "published_date" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.AddRSSItemRequest.CategoryFieldNumber">
+        <member name="F:SwuNews.AddRSSItemRequest.CategoryFieldNumber">
             <summary>Field number for the "category" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.AddRSSItemRequest.AuthorFieldNumber">
+        <member name="F:SwuNews.AddRSSItemRequest.AuthorFieldNumber">
             <summary>Field number for the "author" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.GetRSSItemsRequest.ItemIdFieldNumber">
+        <member name="F:SwuNews.GetRSSItemRequest.ItemIdFieldNumber">
             <summary>Field number for the "item_id" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.GetRSSItemResponse.ItemsFieldNumber">
+        <member name="F:SwuNews.GetRSSItemsResponse.ItemsFieldNumber">
             <summary>Field number for the "items" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.UpdateRSSItemRequest.ItemIdFieldNumber">
+        <member name="F:SwuNews.UpdateRSSItemRequest.ItemIdFieldNumber">
             <summary>Field number for the "item_id" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.UpdateRSSItemRequest.TitleFieldNumber">
+        <member name="F:SwuNews.UpdateRSSItemRequest.TitleFieldNumber">
             <summary>Field number for the "title" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.UpdateRSSItemRequest.LinkFieldNumber">
+        <member name="F:SwuNews.UpdateRSSItemRequest.LinkFieldNumber">
             <summary>Field number for the "link" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.UpdateRSSItemRequest.DescriptionFieldNumber">
+        <member name="F:SwuNews.UpdateRSSItemRequest.DescriptionFieldNumber">
             <summary>Field number for the "description" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.UpdateRSSItemRequest.PublishedDateFieldNumber">
+        <member name="F:SwuNews.UpdateRSSItemRequest.PublishedDateFieldNumber">
             <summary>Field number for the "published_date" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.UpdateRSSItemRequest.CategoryFieldNumber">
+        <member name="F:SwuNews.UpdateRSSItemRequest.CategoryFieldNumber">
             <summary>Field number for the "category" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.UpdateRSSItemRequest.AuthorFieldNumber">
+        <member name="F:SwuNews.UpdateRSSItemRequest.AuthorFieldNumber">
             <summary>Field number for the "author" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.DeleteRSSItemRequest.ItemIdFieldNumber">
+        <member name="F:SwuNews.DeleteRSSItemRequest.ItemIdFieldNumber">
             <summary>Field number for the "item_id" field.</summary>
         </member>
-        <member name="F:SwuNews.gRPC.DeleteRSSItemResponse.SuccessFieldNumber">
+        <member name="F:SwuNews.DeleteRSSItemResponse.SuccessFieldNumber">
             <summary>Field number for the "success" field.</summary>
         </member>
-        <member name="P:SwuNews.gRPC.RSSItemService.Descriptor">
+        <member name="P:SwuNews.RSSItemService.Descriptor">
             <summary>Service descriptor</summary>
         </member>
-        <member name="T:SwuNews.gRPC.RSSItemService.RSSItemServiceBase">
+        <member name="T:SwuNews.RSSItemService.RSSItemServiceBase">
             <summary>Base class for server-side implementations of RSSItemService</summary>
         </member>
-        <member name="M:SwuNews.gRPC.RSSItemService.BindService(SwuNews.gRPC.RSSItemService.RSSItemServiceBase)">
+        <member name="M:SwuNews.RSSItemService.BindService(SwuNews.RSSItemService.RSSItemServiceBase)">
             <summary>Creates service definition that can be registered with a server</summary>
             <param name="serviceImpl">An object implementing the server-side handling logic.</param>
         </member>
-        <member name="M:SwuNews.gRPC.RSSItemService.BindService(Grpc.Core.ServiceBinderBase,SwuNews.gRPC.RSSItemService.RSSItemServiceBase)">
+        <member name="M:SwuNews.RSSItemService.BindService(Grpc.Core.ServiceBinderBase,SwuNews.RSSItemService.RSSItemServiceBase)">
             <summary>Register service method with a service binder with or without implementation. Useful when customizing the service binding logic.
             Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
             <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>

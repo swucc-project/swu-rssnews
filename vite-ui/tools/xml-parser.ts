@@ -1,7 +1,7 @@
 import { parseString, Builder } from 'xml2js';
-import Prism from 'prismjs'
-import 'prismjs/components/prism-markup'
-import 'prismjs/themes/prism-tomorrow.css'
+import Prism from 'prismjs';
+import 'prismjs/components/prism-markup';
+import 'prismjs/themes/prism-tomorrow.css';
 
 export interface RSSChannel {
     title: string;
@@ -23,77 +23,27 @@ export interface RSSItem {
     guid?: string;
 }
 
-/**
- * แปลง XML string เป็น JavaScript Object
- */
-export const parseXMLToJSON = (xml: string): Promise<any> => {
-    return new Promise((resolve, reject) => {
+export const parseXMLToJSON = (xml: string): Promise<any> =>
+    new Promise((resolve, reject) => {
         parseString(
             xml,
             { explicitArray: false, trim: true, mergeAttrs: true },
-            (err, result) => {
-                if (err) reject(err)
-                else resolve(result)
-            }
+            (err, result) => (err ? reject(err) : resolve(result))
         );
     });
-};
 
-/**
- * แปลง JavaScript Object เป็น XML string
- */
-export const convertJSONToXML = (jsonData: any, rootName: string = 'rss'): string => {
+export const convertJSONToXML = (
+    jsonData: any,
+    rootName: string = 'rss'
+): string => {
     const builder = new Builder({
         rootName,
         xmldec: { version: '1.0', encoding: 'UTF-8' },
         renderOpts: { pretty: true, indent: '  ', newline: '\n' },
-    })
-    return builder.buildObject(jsonData)
+    });
+    return builder.buildObject(jsonData);
 };
 
-/**
- * แปลง RSS XML เป็น structured data
- */
-export const parseRSSFeed = async (xmlString: string): Promise<RSSChannel> => {
-    try {
-        const parsed = await parseXMLToJSON(xmlString);
-
-        const channel = parsed.rss?.channel || parsed.channel;
-
-        if (!channel) {
-            throw new Error('Invalid RSS feed format');
-        }
-
-        const items = Array.isArray(channel.item)
-            ? channel.item
-            : channel.item ? [channel.item] : [];
-
-        return {
-            title: channel.title || '',
-            link: channel.link || '',
-            description: channel.description || '',
-            language: channel.language,
-            copyright: channel.copyright,
-            lastBuildDate: channel.lastBuildDate,
-            items: items.map((item: any) => ({
-                title: item.title || '',
-                link: item.link || '',
-                description: item.description || '',
-                pubDate: item.pubDate || '',
-                category: item.category,
-                author: item.author,
-                guid: item.guid?._ || item.guid,
-            })),
-        };
-    } catch (error) {
-        console.error('Error parsing RSS feed:', error);
-        throw error;
-    }
-};
-
-/**
- * สร้าง RSS XML จาก structured data
- */
 export const buildRSSFeed = (channel: RSSChannel): string => {
     const rssObject = {
         $: {
@@ -110,11 +60,17 @@ export const buildRSSFeed = (channel: RSSChannel): string => {
             item: channel.items.map(item => ({
                 title: item.title,
                 link: item.link,
-                description: { _: item.description, $: { 'xmlns': 'http://www.w3.org/1999/xhtml' } },
+                description: {
+                    _: item.description,
+                    $: { xmlns: 'http://www.w3.org/1999/xhtml' },
+                },
                 pubDate: item.pubDate,
-                category: item.category,
-                author: item.author,
-                guid: { _: item.guid || item.link, $: { isPermaLink: 'true' } },
+                ...(item.category && { category: item.category }),
+                ...(item.author && { author: item.author }),
+                guid: {
+                    _: item.guid || item.link,
+                    $: { isPermaLink: 'true' },
+                },
             })),
         },
     };
@@ -122,64 +78,53 @@ export const buildRSSFeed = (channel: RSSChannel): string => {
     return convertJSONToXML(rssObject, 'rss');
 };
 
-export const convertJSONToHighlightedXML = (jsonData: any, rootName: string = 'rss'): string => {
-    const xmlString = convertJSONToXML(jsonData, rootName)
-    const highlighted = Prism.highlight(xmlString, Prism.languages.xml, 'xml')
-    return `<pre class="language-xml"><code>${highlighted}</code></pre>`
-}
+export const highlightXMLString = (xmlString: string): string => {
+    if (typeof window === 'undefined') {
+        return `<pre><code>${escapeXML(xmlString)}</code></pre>`;
+    }
 
-/**
- * Format XML string ให้อ่านง่าย
- */
+    const highlighted = Prism.highlight(
+        xmlString,
+        Prism.languages.xml,
+        'xml'
+    );
+    return `<pre class="language-xml"><code>${highlighted}</code></pre>`;
+};
+
 export const formatXML = (xmlString: string): string => {
     try {
-        const formatted = xmlString
+        return xmlString
             .replace(/>\s*</g, '>\n<')
             .split('\n')
             .map(line => line.trim())
-            .filter(line => line.length > 0)
+            .filter(Boolean)
             .join('\n');
-
-        return formatted;
-    } catch (error) {
-        console.error('Error formatting XML:', error);
+    } catch {
         return xmlString;
     }
 };
 
-/**
- * Validate XML string
- */
 export const validateXML = async (xmlString: string): Promise<boolean> => {
     try {
         await parseXMLToJSON(xmlString);
         return true;
-    } catch (error) {
-        console.error('XML validation failed:', error);
+    } catch {
         return false;
     }
 };
 
-/**
- * Escape XML special characters
- */
-export const escapeXML = (text: string): string => {
-    return text
+export const escapeXML = (text: string): string =>
+    text
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
-};
 
-/**
- * Unescape XML special characters
- */
-export const unescapeXML = (text: string): string => {
-    return text
+export const unescapeXML = (text: string): string =>
+    text
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
         .replace(/&quot;/g, '"')
         .replace(/&apos;/g, "'");
-};

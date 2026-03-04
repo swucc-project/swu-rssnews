@@ -16,7 +16,6 @@ declare -A DEV_PORTS=(
     ["ASP.NET Core API"]="5000/tcp"
     ["Vite Dev Server"]="5173/tcp"
     ["Nginx Dev HTTP"]="8080/tcp"
-    ["SSR Server"]="13714/tcp"
     ["Vite HMR WebSocket"]="24678/tcp"
     ["SQL Server"]="1433/tcp"
     ["OpenSSH Server"]="22/tcp"
@@ -56,6 +55,14 @@ setup_zones() {
     if firewall-cmd --get-active-zones | grep -q docker; then
         firewall-cmd --zone=trusted --add-interface=docker0 --permanent 2>/dev/null || true
     fi
+}
+
+add_samba_service() {
+    local zone="${1:-public}"
+
+    echo -e "\n${CYAN}📦 Enable Samba Service (port 445)...${NC}"
+
+    firewall-cmd --zone="$zone" --add-service=samba --permanent
 }
 
 add_development_ports() {
@@ -179,6 +186,7 @@ main() {
             echo -e "${GREEN}🚀 Enabling firewall rules...${NC}"
             setup_zones "$zone"
             add_docker_rules "$zone"
+            add_samba_service "$zone"
             
             if [[ "$environment" == "development" ]] || [[ "$environment" == "all" ]]; then
                 add_development_ports "$zone"

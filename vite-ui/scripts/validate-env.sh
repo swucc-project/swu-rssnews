@@ -60,8 +60,6 @@ echo ""
 
 # ✅ Check optional variables
 echo -e "${YELLOW}🔍 Optional Variables:${NC}"
-check_var "SSR_RENDER_URL" false
-check_var "SSR_PORT" false
 check_var "APOLLO_KEY" false
 check_var "NODE_ENV" false
 echo ""

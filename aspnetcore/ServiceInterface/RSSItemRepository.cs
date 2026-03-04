@@ -6,10 +6,12 @@ namespace rssnews.ServiceInterface
 {
     public interface IRSSItemRepository
     {
-        SwuNews.gRPC.Item Add(SwuNews.gRPC.AddRSSItemRequest request);
-        IEnumerable<SwuNews.gRPC.Item> GetAll();
-        SwuNews.gRPC.Item? GetById(string itemId);
-        SwuNews.gRPC.Item? Update(SwuNews.gRPC.UpdateRSSItemRequest request);
+        Item Add(Item item);
+        IEnumerable<Item> GetAll();
+        Item? GetById(string itemId);
+        (string firstname, string lastname)? GetAuthorById(string authorId);
+        string? GetCategoryById(int categoryId);
+        Item? Update(Item item);
         bool DeleteById(string itemId);
     }
     public class RSSItemRepository : IRSSItemRepository
@@ -55,83 +57,36 @@ namespace rssnews.ServiceInterface
             });
         }
 
-        private SwuNews.gRPC.Item? ToGrpcItem(Item? domainItem)
+        public Item Add(Item item)
         {
-            if (domainItem == null) return null;
-
-            var authorInfo = _authorsData.GetValueOrDefault(domainItem.AuthorID, ("Unknown", "Author"));
-            var categoryName = _categoriesData.GetValueOrDefault(domainItem.CategoryID, "Unknown Category");
-
-            return new SwuNews.gRPC.Item
-            {
-                ItemId = domainItem.ItemID, // แก้ไข
-                Title = domainItem.Title,
-                Link = domainItem.Link,
-                Description = domainItem.Description,
-                PublishedDate = Timestamp.FromDateTime(domainItem.PublishedDate),
-                Author = new SwuNews.gRPC.Author
-                {
-                    AuthorId = domainItem.AuthorID,
-                    Firstname = authorInfo.Item1,
-                    Lastname = authorInfo.Item2
-                },
-                Category = new SwuNews.gRPC.Category
-                {
-                    Id = domainItem.CategoryID,
-                    Name = categoryName
-                }
-            };
+            item.ItemID = _nextId++.ToString();
+            _inMemoryDb.Add(item);
+            return item;
         }
 
-        public SwuNews.gRPC.Item Add(SwuNews.gRPC.AddRSSItemRequest request)
-        {
-            var newItem = new Item
-            {
-                ItemID = _nextId++.ToString(), // แก้ไข
-                Title = request.Title,
-                Link = request.Link,
-                Description = request.Description,
-                PublishedDate = request.PublishedDate.ToDateTime(),
-                AuthorID = request.Author.AuthorId,
-                CategoryID = request.Category.Id
-            };
+        public IEnumerable<Item> GetAll() => _inMemoryDb;
 
-            _inMemoryDb.Add(newItem);
-            return ToGrpcItem(newItem)!;
-        }
+        public Item? GetById(string itemId) => _inMemoryDb.FirstOrDefault(x => x.ItemID == itemId);
+        public (string firstname, string lastname)? GetAuthorById(string authorId) => _authorsData.TryGetValue(authorId, out var author) ? author : null;
+        public string? GetCategoryById(int categoryId) => _categoriesData.TryGetValue(categoryId, out var name) ? name : null;
 
-        public IEnumerable<SwuNews.gRPC.Item> GetAll()
+        public Item? Update(Item item)
         {
-            return _inMemoryDb.Select(ToGrpcItem).ToList()!;
-        }
-
-        public SwuNews.gRPC.Item? GetById(string itemId)
-        {
-            var domainItem = _inMemoryDb.FirstOrDefault(item => item.ItemID == itemId);
-            if (domainItem == null)
-            {
-                return null;
-            }
-            return ToGrpcItem(domainItem);
-        }
-
-        public SwuNews.gRPC.Item? Update(SwuNews.gRPC.UpdateRSSItemRequest request)
-        {
-            var existingItem = _inMemoryDb.FirstOrDefault(item => item.ItemID == request.ItemId); // แก้ไข
+            var existingItem = _inMemoryDb.FirstOrDefault(i => i.ItemID == item.ItemID); // แก้ไข
 
             if (existingItem == null)
             {
                 return null;
             }
 
-            existingItem.Title = request.Title;
-            existingItem.Link = request.Link;
-            existingItem.Description = request.Description;
-            existingItem.PublishedDate = request.PublishedDate.ToDateTime();
-            existingItem.AuthorID = request.Author.AuthorId;
-            existingItem.CategoryID = request.Category.Id;
+            existingItem.Title = item.Title;
+            existingItem.Link = item.Link;
+            existingItem.Description = item.Description;
+            existingItem.PublishedDate = item.PublishedDate;
+            existingItem.AuthorID = item.AuthorID;
+            existingItem.CategoryID = item.CategoryID;
 
-            return ToGrpcItem(existingItem);
+            return existingItem;
         }
 
         public bool DeleteById(string itemId)

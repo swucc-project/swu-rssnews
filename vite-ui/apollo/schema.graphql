@@ -1,0 +1,87 @@
+# ═══════════════════════════════════════════════════════════
+# GraphQL Schema for SWU RSS News Application
+# ═══════════════════════════════════════════════════════════
+
+"""Scalar types"""
+scalar DateTime
+scalar UUID
+scalar Decimal
+scalar Long
+
+"""RSS Item type"""
+type RssItem {
+  itemID: ID!
+  title: String!
+  link: String!
+  description: String
+  publishedDate: DateTime
+  category: Category
+  author: Author
+}
+
+"""Category type"""
+type Category {
+  categoryID: Int!
+  categoryName: String!
+  rssItems: [RssItem!]
+}
+
+"""Author type"""
+type Author {
+  buasriID: String!
+  firstName: String!
+  lastName: String!
+  rssItems: [RssItem!]
+}
+
+"""Root Query type"""
+type Query {
+  """Get all RSS items"""
+  rssItems(categoryId: Int): [RssItem!]!
+  
+  """Get RSS item by ID"""
+  rssItem(id: ID!): RssItem
+  
+  """Get all categories"""
+  categories: [Category!]!
+  
+  """Get category by ID"""
+  category(id: Int!): Category
+  
+  """Health check"""
+  _health: String
+}
+
+"""Root Mutation type"""
+type Mutation {
+  """Create new RSS item"""
+  createRssItem(input: CreateRssItemInput!): RssItem
+  
+  """Update RSS item"""
+  updateRssItem(id: ID!, input: UpdateRssItemInput!): RssItem
+  
+  """Delete RSS item"""
+  deleteRssItem(id: ID!): Boolean
+}
+
+"""Input for creating RSS item"""
+input CreateRssItemInput {
+  title: String!
+  link: String!
+  description: String
+  categoryId: Int
+}
+
+"""Input for updating RSS item"""
+input UpdateRssItemInput {
+  title: String
+  link: String
+  description: String
+  categoryId: Int
+}
+
+"""Root Subscription type"""
+type Subscription {
+  """Subscribe to new RSS items"""
+  rssItemAdded: RssItem
+}

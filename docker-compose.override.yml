@@ -1,91 +1,226 @@
 name: swu-rssnews
 
+# ═══════════════════════════════════════════════════════════
+# 🔧 DEVELOPMENT OVERRIDES - IMPROVED VERSION
+# ═══════════════════════════════════════════════════════════
+# This file automatically extends docker-compose.yml
+# Use: docker compose up
+# ═══════════════════════════════════════════════════════════
+
 services:
+  # ═══════════════════════════════════════════════════════════
+  # 🎯 ASP.NET Core Backend - Development Settings
+  # ═══════════════════════════════════════════════════════════
   aspdotnetweb:
     environment:
+      # Environment
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5000
-      - ADD_NEW_MIGRATION=false
-      - MIGRATION_NAME=SWUNewsEvents
+      
+      # URLs
+      - APP_URL=${APP_URL:-http://localhost:8080}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8080}
+      
+      # GraphQL Settings (Development)
+      - GraphQL__EnableIntrospection=true
+      - GraphQL__EnablePlayground=true
+      - ENABLE_GRAPHQL_INTROSPECTION=true
+      - EXPORT_SCHEMA_ON_STARTUP=true
+      - SCHEMA_EXPORT_PATH=/app/apollo/schema.graphql
+      
+      # Kestrel Settings
+      - Kestrel__EnableGrpcWeb=true
+      
+      # Migration Settings
+      - ADD_NEW_MIGRATION=${ADD_NEW_MIGRATION:-true}
+      - MIGRATION_NAME=${MIGRATION_NAME:-SWUNewsEvents}
+      
+      # Logging
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__HotChocolate=Debug
+    
     ports:
       - "5000:5000"
+    
     volumes:
       - ./aspnetcore:/app/aspnetcore:cached
+      - dotnet-accessories:/root/.dotnet/tools
+      - frontend-libraries:/var/www/rssnews/wwwroot/volume
+      - dataprotection-keys:/var/www/rssnews/.aspnet/DataProtection-Keys:rw
+      - web-logs:/var/log/rssnews
+      - graphql-schema:/app/apollo:rw
+    
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:5000/graphql -H 'Content-Type: application/json' -H 'X-Allow-Introspection: true' -d '{\"query\":\"{ __typename }\"}'"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 90s  # เพิ่มเวลารอให้ backend startup เสร็จสมบูรณ์
+      test: |
+        curl -sf http://localhost:5000/health/ready && \
+        curl -sf http://localhost:5000/health/graphql && \
+        test -f /app/apollo/schema.graphql || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    
+    restart: unless-stopped
 
+  # ═══════════════════════════════════════════════════════════
+  # ⚛️ Vite Frontend - Development Settings
+  # ═══════════════════════════════════════════════════════════
   frontend:
     environment:
+      # Node Environment
       - NODE_ENV=development
-      - WAIT_FOR_BACKEND=true
-      # Server-side URLs (Docker network)
+      - NODE_OPTIONS=--max-old-space-size=4096
+      
+      # App URLs
+      - APP_URL=${APP_URL:-http://localhost:8080}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8080}
+      - VITE_APP_URL=${APP_URL:-http://localhost:8080}
+      - VITE_BASE_URL=/
+      
+      # Vite Dev Server
+      - VITE_DEV_SERVER_PORT=5173
+      - VITE_DEV_PUBLIC_URL=http://localhost:5173
+      
+      # Internal API URLs (Container-to-Container)
       - VITE_API_URL=http://aspdotnetweb:5000
       - VITE_GRAPHQL_ENDPOINT=http://aspdotnetweb:5000/graphql
+      - GRAPHQL_ENDPOINT=http://aspdotnetweb:5000/graphql
       - VITE_GRAPHQL_WS_URL=ws://aspdotnetweb:5000/graphql-ws
       - VITE_GRPC_ENDPOINT=http://aspdotnetweb:5000/grpc
-      # Client-side URLs (Browser)
-      - VITE_PUBLIC_API_URL=http://localhost:5000
-      - VITE_PUBLIC_GRAPHQL_ENDPOINT=http://localhost:5000/graphql
-      - VITE_PUBLIC_GRAPHQL_WS_URL=ws://localhost:5000/graphql-ws
-      - VITE_PUBLIC_GRPC_ENDPOINT=http://localhost:5000/grpc
+      
+      # Public API URLs (Browser-facing)
+      - VITE_PUBLIC_API_URL=http://localhost:8080/api
+      - VITE_PUBLIC_GRAPHQL_ENDPOINT=http://localhost:8080/graphql
+      - VITE_PUBLIC_GRAPHQL_WS_URL=ws://localhost:8080/graphql-ws
+      - VITE_PUBLIC_GRPC_ENDPOINT=http://localhost:8080/grpc
+      
       # HMR Configuration
+      # [BUG FIX #1] VITE_HMR_HOST ต้องเป็น "localhost" เพื่อให้ browser เชื่อมต่อ HMR ได้
+      # แต่ VITE_HMR_PORT และ VITE_HMR_CLIENT_PORT ต้องตรงกับ port ที่ expose ออกมา
+      # client_port คือ port ที่ browser ใช้ (ผ่าน Nginx หรือตรง), port คือ port ใน container
       - VITE_HMR_HOST=localhost
-      - VITE_HMR_PROTOCOL=ws
       - VITE_HMR_PORT=5173
-      - NODE_OPTIONS=--max-old-space-size=4096
-      # ✅ Timeout settings
-      - BACKEND_WAIT_TIMEOUT=150  # 2.5 minutes
-      - GRAPHQL_WAIT_TIMEOUT=180  # 3 minutes
+      - VITE_HMR_PROTOCOL=ws
+      
+      # Backend Wait Configuration
+      - WAIT_FOR_BACKEND=true
+      - BACKEND_WAIT_TIMEOUT=180
+      - GRAPHQL_WAIT_TIMEOUT=240
+      - GRAPHQL_POLL_INTERVAL=2
+      - ROVER_TIMEOUT=45
+      
+      # Code Generation
+      - SKIP_GRAPHQL_CODEGEN=false
+      - USE_LOCAL_SCHEMA=true
+      - DEBUG_CODEGEN=true
+      - CODEGEN_WATCH=false
+      - VALIDATE_SCHEMA=true
+      - SCHEMA_VALIDATE_TIMEOUT=45
+      
+      # Fallback & Error Handling
+      - CONTINUE_ON_GRAPHQL_FAIL=true
+      - CONTINUE_ON_FAIL=true
+      - STRICT_MODE=false
+      - FORCE_PLACEHOLDERS=false
+    
+    expose:
+      - "5173"
+    
     ports:
-      - "127.0.0.1:5173:5173"
-      - "127.0.0.1:13714:13714"
-      - "127.0.0.1:24678:24678"
+      - "5173:5173"
+    
     volumes:
       - ./vite-ui:/app:cached
       - nodejs-libraries:/app/node_modules
       - vite-cache:/app/node_modules/.vite
-    # ✅ รอให้ backend healthy จริงๆ
+      - frontend-libraries:/var/www/rssnews/wwwroot
+      - grpc-batch:/app/grpc-generated:rw
+      - graphql-schema:/app/apollo:rw
+      - graphql-generated:/app/apollo/generated:rw
+      - ./protobuf/rss.proto:/app/protobuf/rss.proto:ro
+      - ./vite-ui/scripts:/app/scripts:ro
+    
     depends_on:
       aspdotnetweb:
         condition: service_healthy
-        restart: true  # รอ backend restart ด้วย
-    # ✅ ปรับปรุง healthcheck
+        restart: true
+    
     healthcheck:
       test: |
-        # ตรวจสอบ Vite dev server
-        curl -f http://localhost:5173 >/dev/null 2>&1 || exit 1
-        # ตรวจสอบ SSR server
-        curl -f http://localhost:13714/health >/dev/null 2>&1 || exit 1
-        # ตรวจสอบว่า generated files มีจริง (optional check)
-        test -f /app/apollo/generated/graphql.ts || exit 0
-      interval: 30s
-      timeout: 15s
-      retries: 20
-      start_period: 360s  # 6 minutes - เพิ่มเวลาสำหรับ GraphQL generation
+        test -f /app/.ready && \
+        curl -sf http://localhost:5173 >/dev/null 2>&1 || exit 1
+      interval: 15s
+      timeout: 10s
+      # [BUG FIX #2] comment บอกว่า "เพิ่มจาก 10 เป็น 12" แต่ค่าจริงเป็น 15 ซึ่ง inconsistent
+      # ปรับให้ถูกต้องตามที่ comment ตั้งใจ
+      retries: 12
+      start_period: 180s  
+    
+    restart: unless-stopped
 
+  # ═══════════════════════════════════════════════════════════
+  # 🌐 Nginx Web Server - Development Settings
+  # ═══════════════════════════════════════════════════════════
   web-server:
+    environment:
+      - APP_URL=${APP_URL:-http://localhost:8080}
+      - VITE_UPSTREAM=http://frontend:5173
+    
+    # [BUG FIX #3] ใน Development ควร expose port 80 ด้วย (สำหรับ health check ภายใน)
+    # และ map 8080 -> 80 ให้ชัดเจน
     ports:
       - "8080:80"
+    
     volumes:
       - ./host/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./host/web.conf:/etc/nginx/conf.d/default.conf:ro
-    # ✅ รอให้ทั้ง backend และ frontend พร้อม
+      - ./host/dev-web.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/ssl/rssnews:ro
+      - frontend-libraries:/var/www/rssnews/wwwroot/volume
+      - grpc-batch:/var/www/rssnews/wwwroot/grpc:rw
+      - nginx-logs:/var/log/nginx
+    
     depends_on:
       aspdotnetweb:
         condition: service_healthy
       frontend:
-        condition: service_started
+        condition: service_healthy
+    
+    healthcheck:
+      # [BUG FIX #4] health check ของ nginx ใน dev ต้อง check port 80 (ภายใน container)
+      # ไม่ใช่ port 8080 (ซึ่งเป็น host port)
+      test: ["CMD-SHELL", "curl -sf http://localhost/health || curl -sf http://localhost:80 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    
+    restart: unless-stopped
 
+  # ═══════════════════════════════════════════════════════════
+  # 💾 SQL Server - Development Settings
+  # ═══════════════════════════════════════════════════════════
   mssql:
+    environment:
+      - MSSQL_MEMORY_LIMIT_MB=2048
+    
     ports:
-      - "127.0.0.1:1433:1433"
+      - "1433:1433"
+    
+    healthcheck:
+      test: |
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$(cat /run/secrets/db_password)" -Q "SELECT 1" -C -b || exit 1
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
+# ═══════════════════════════════════════════════════════════
+# 📦 Additional Development Volumes
+# ═══════════════════════════════════════════════════════════
 volumes:
+  vite-cache:
+    driver: local
   nodejs-libraries:
     driver: local
-  vite-cache:
+  graphql-generated:
     driver: local

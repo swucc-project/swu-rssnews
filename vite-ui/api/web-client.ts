@@ -1,9 +1,11 @@
 import { Api } from '~api/generated/api';
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
+const baseUrl = import.meta.env.VITE_PUBLIC.API_URL || ''
+
 // สร้าง axios instance พร้อม config
 const axiosInstance: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+    baseURL: baseUrl,
     withCredentials: true, // สำคัญ! สำหรับ cookie authentication
     headers: {
         'Content-Type': 'application/json',
@@ -40,7 +42,7 @@ axiosInstance.interceptors.response.use(
 
 // สร้าง API Client
 export const apiClient = new Api({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+    baseURL: baseUrl,
     baseApiParams: {
         credentials: 'include',
         headers: {

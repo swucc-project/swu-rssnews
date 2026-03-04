@@ -67,6 +67,14 @@
               "target": "Package",
               "version": "[2.70.0, )"
             },
+            "Grpc.AspNetCore.Server": {
+              "target": "Package",
+              "version": "[2.70.0, )"
+            },
+            "Grpc.AspNetCore.Server.Reflection": {
+              "target": "Package",
+              "version": "[2.70.0, )"
+            },
             "Grpc.AspNetCore.Web": {
               "target": "Package",
               "version": "[2.70.0, )"
@@ -109,14 +117,6 @@
               "target": "Package",
               "version": "[15.1.7, )"
             },
-            "HotChocolate.Server": {
-              "target": "Package",
-              "version": "[10.5.5, )"
-            },
-            "HotChocolate.Stitching": {
-              "target": "Package",
-              "version": "[13.9.14, )"
-            },
             "HotChocolate.Subscriptions": {
               "target": "Package",
               "version": "[15.1.7, )"
@@ -125,11 +125,20 @@
               "target": "Package",
               "version": "[15.1.7, )"
             },
+            "HotChocolate.Types.Analyzers": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[15.1.7, )"
+            },
             "HotChocolate.Utilities": {
               "target": "Package",
               "version": "[15.1.7, )"
             },
             "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Microsoft.AspNetCore.SpaServices.Extensions": {
               "target": "Package",
               "version": "[9.0.8, )"
             },
@@ -163,6 +172,18 @@
               "target": "Package",
               "version": "[9.0.8, )"
             },
+            "Microsoft.Extensions.Logging": {
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Microsoft.Extensions.Logging.Console": {
+              "target": "Package",
+              "version": "[9.0.8, )"
+            },
+            "Proggmatic.SpaServices.Vite": {
+              "target": "Package",
+              "version": "[9.0.1, )"
+            },
             "ServiceStack": {
               "target": "Package",
               "version": "[8.8.0, )"
@@ -172,6 +193,10 @@
               "version": "[8.8.0, )"
             },
             "ServiceStack.Client": {
+              "target": "Package",
+              "version": "[8.8.0, )"
+            },
+            "ServiceStack.Common": {
               "target": "Package",
               "version": "[8.8.0, )"
             },
@@ -263,7 +288,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.307/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.311/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

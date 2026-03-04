@@ -1,51 +1,43 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue';
-import type { RSSItemServiceClient } from '~grpc/rss.client';
-import { parseRSSFeed, buildRSSFeed, formatXML, type RSSChannel } from '~tools/xml-parser';
-import { convertJSONToHighlightedXML } from '~tools/xml-parser'
+import { ref, onMounted, watch } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
+import { buildRSSFeed, formatXML, highlightXMLString, type RSSChannel } from '~tools/xml-parser';
 import { formatThaiDate } from '~tools/date-packages';
 
+interface NewsItem {
+    itemID: string;
+    title: string;
+    link: string;
+    description: string;
+    publishedDate: string | Date;
+    category?: {
+    categoryName: string;
+  };
+  author?: {
+    firstName: string;
+    lastName: string;
+  };
+}
 const props = defineProps<{
     categoryId?: string | number;
+    rssItems: NewsItem[];
+    auth?: unknown; // Shared Data
 }>();
 
-const grpcClient = inject<RSSItemServiceClient>('grpcClient');
-
-const loading = ref(false);
-const error = ref<string | null>(null);
-const rssItems = ref<any[]>([]);
-const xmlContent = ref<string>('');
-const showXML = ref(false);
-const highlightedXML = ref('')
+const xmlContent = ref('');
+const highlightedXML = ref('');
 const viewMode = ref<'card' | 'xml'>('card');
-
-// Fetch RSS items using gRPC
-const fetchRSSItems = async () => {
-    if (!grpcClient) {
-        error.value = 'gRPC client not available';
-        return;
-    }
-
-    loading.value = true;
-    error.value = null;
-
-    try {
-        const { response } = await grpcClient.getRSSItems({});
-        rssItems.value = response.items || [];
-        
-        // แปลงเป็น XML
-        await generateXMLFeed();
-    } catch (err: any) {
-        error.value = err.message || 'Failed to fetch RSS items';
-        console.error('gRPC Error:', err);
-    } finally {
-        loading.value = false;
-    }
-};
+const loading = ref(false);
 
 // Generate XML feed from items
-const generateXMLFeed = async () => {
+const generateXMLFeed = () => {
     try {
+        if (!props.rssItems || props.rssItems.length === 0) {
+            xmlContent.value = '';
+            highlightedXML.value = '';
+            return;
+        }
+
         const channel: RSSChannel = {
             title: 'ระบบข่าวและกิจกรรม มหาวิทยาลัยศรีนครินทรวิโรฒ',
             link: window.location.origin,
@@ -53,22 +45,28 @@ const generateXMLFeed = async () => {
             language: 'th',
             copyright: '© ฝ่ายระบบสารสนเทศ สำนักคอมพิวเตอร์ มหาวิทยาลัยศรีนครินทรวิโรฒ',
             lastBuildDate: new Date().toUTCString(),
-            items: rssItems.value.map(item => ({
+            items: props.rssItems.map(item => ({
                 title: item.title,
                 link: item.link,
                 description: item.description,
-                pubDate: new Date(item.publishedDate.seconds * 1000).toUTCString(),
-                category: item.category?.name || '',
-                author: `${item.author?.firstname || ''} ${item.author?.lastname || ''}`.trim(),
+                pubDate: item.publishedDate
+                    ? new Date(item.publishedDate).toUTCString()
+                    : new Date().toUTCString(),
+                category: item.category?.categoryName ?? '',
+                author: item.author
+                ? `${item.author.firstName} ${item.author.lastName}`.trim()
+                : undefined,
                 guid: item.link,
             })),
         };
 
         const xml = buildRSSFeed(channel);
         xmlContent.value = formatXML(xml);
+        // ✅ ใช้ฟังก์ชันใหม่ที่รับ String
+        highlightedXML.value = highlightXMLString(xmlContent.value);
+        console.log('✅ XML feed generated');
     } catch (err) {
-        console.error('Error generating XML:', err);
-        error.value = 'Failed to generate XML feed';
+        console.error('❌ Error generating XML:', err);
     }
 };
 
@@ -78,7 +76,7 @@ const downloadXML = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `rss-feed-${new Date().getTime()}.xml`;
+    a.download = `rss-feed-${Date.now()}.xml`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -95,15 +93,28 @@ const copyXML = async () => {
     }
 };
 
-onMounted(async () => {
-    await fetchRSSItems();
-    highlightedXML.value = convertJSONToHighlightedXML(xmlContent.value, 'rss');
-});
+// Handle Refresh using Inertia Reload
+const handleRefresh = () => {
+    loading.value = true;
+    router.reload({
+        only: ['rssItems'],
+        onFinish: () => {
+            loading.value = false;
+            generateXMLFeed();
+        }
+    });
+};
+
+onMounted(generateXMLFeed);
+
+watch(
+  () => props.rssItems,
+  () => generateXMLFeed()
+);
 </script>
 
 <template>
     <div class="container mx-auto p-6 font-sarabun">
-        <!-- Header with controls -->
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-gray-800">RSS Feed</h1>
             
@@ -132,6 +143,7 @@ onMounted(async () => {
                     v-if="viewMode === 'xml'"
                     @click="downloadXML" 
                     class="btn btn-sm btn-success"
+                    :disabled="!xmlContent"
                 >
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -143,6 +155,7 @@ onMounted(async () => {
                     v-if="viewMode === 'xml'"
                     @click="copyXML" 
                     class="btn btn-sm btn-info"
+                    :disabled="!xmlContent"
                 >
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -151,7 +164,7 @@ onMounted(async () => {
                 </button>
                 
                 <button 
-                    @click="fetchRSSItems" 
+                    @click="handleRefresh" 
                     class="btn btn-sm btn-secondary"
                     :disabled="loading"
                 >
@@ -163,20 +176,17 @@ onMounted(async () => {
             </div>
         </div>
 
-        <!-- Loading state -->
-        <LoadingSpinner v-if="loading && !rssItems.length" text="กำลังโหลดข่าวสาร..." />
+        <div v-if="!props.rssItems || props.rssItems.length === 0" class="alert alert-info shadow-lg">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>ไม่พบรายการข่าวสาร</span>
+            </div>
+        </div>
 
-        <!-- Error state -->
-        <FailureNotice v-else-if="error" :message="`เกิดข้อผิดพลาด: ${error}`" />
-
-        <!-- Empty state -->
-        <EmptyState v-else-if="rssItems.length === 0" message="ไม่พบรายการข่าวสาร" />
-
-        <!-- Card View -->
         <div v-else-if="viewMode === 'card'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div 
-                v-for="item in rssItems" 
-                :key="item.itemId" 
+                v-for="item in props.rssItems" 
+                :key="item.itemID" 
                 class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300"
             >
                 <div class="card-body">
@@ -185,17 +195,17 @@ onMounted(async () => {
                     
                     <div class="mt-4 space-y-1 text-xs text-gray-500">
                         <p v-if="item.category" class="badge badge-outline">
-                            {{ item.category.name }}
+                            {{ item.category.categoryName }}
                         </p>
-                        <p>เผยแพร่: {{ formatThaiDate(new Date(item.publishedDate.seconds * 1000)) }}</p>
+                        <p>เผยแพร่: {{ formatThaiDate(new Date(item.publishedDate)) }}</p>
                         <p v-if="item.author">
-                            ผู้เขียน: {{ item.author.firstname }} {{ item.author.lastname }}
+                            ผู้เขียน: {{ item.author.firstName }} {{ item.author.lastName }}
                         </p>
                     </div>
                     
                     <div class="card-actions justify-end items-center mt-4">
                         <Link 
-                            :href="`/rss/update/${item.itemId}`" 
+                            :href="`/rss/update/${item.itemID}`" 
                             class="btn btn-sm btn-warning"
                         >
                             แก้ไข
@@ -213,9 +223,9 @@ onMounted(async () => {
             </div>
         </div>
 
-        <!-- XML View -->
-        <div v-else-if="viewMode === 'xml'" class="rounded-lg p-6 overflow-auto bg-gray-900 text-green-300">
-            <pre v-html="highlightedXml"></pre>
+        <div v-else-if="viewMode === 'xml'" class="rounded-lg p-6 overflow-auto bg-gray-900 text-green-300 max-h-[70vh]">
+            <pre v-if="highlightedXML" v-html="highlightedXML"></pre>
+            <pre v-else class="text-gray-400">{{ xmlContent || 'กำลังสร้าง XML...' }}</pre>
         </div>
     </div>
 </template>
@@ -228,9 +238,8 @@ onMounted(async () => {
     overflow: hidden;
 }
 
-pre code {
-    display: block;
-    max-width: 100%;
-    overflow-x: auto;
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 </style>

@@ -3,10 +3,10 @@ const path = require('path');
 module.exports = {
     content: [
         '../aspnetcore/**/*.cshtml',
-        '../aspnetcore/index.html',
         './hub/**/*.{vue,js,ts,jsx,tsx}',
         './apollo/**/*.{vue,js,ts,jsx,tsx}',
         './css/**/*.{css,scss}',
+        './index.html',
     ],
     theme: {
         extend: {
@@ -19,6 +19,7 @@ module.exports = {
     plugins: [
         require('daisyui'),
         require('@tailwindcss/forms'),
+        require('@tailwindcss/typography'),
     ],
     daisyui: {
         themes: ["light"],

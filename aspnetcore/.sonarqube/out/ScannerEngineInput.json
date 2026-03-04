@@ -1,0 +1,96 @@
+{
+  "scannerProperties": [
+    {
+      "key": "sonar.scanner.app",
+      "value": "ScannerMSBuild"
+    },
+    {
+      "key": "sonar.scanner.appVersion",
+      "value": "11.1"
+    },
+    {
+      "key": "sonar.scanner.bootstrapStartTime",
+      "value": "1772183043000"
+    },
+    {
+      "key": "sonar.projectKey",
+      "value": "swu_rssnews"
+    },
+    {
+      "key": "sonar.working.directory",
+      "value": "D:\\docker-rss\\aspnetcore\\.sonarqube\\out\\.sonar"
+    },
+    {
+      "key": "sonar.projectBaseDir",
+      "value": "D:\\docker-rss\\aspnetcore"
+    },
+    {
+      "key": "sonar.pullrequest.cache.basepath",
+      "value": "D:\\docker-rss\\aspnetcore"
+    },
+    {
+      "key": "sonar.sources",
+      "value": ""
+    },
+    {
+      "key": "sonar.tests",
+      "value": ""
+    },
+    {
+      "key": "sonar.modules",
+      "value": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE"
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.projectKey",
+      "value": "swu_rssnews:7CBE4553-D79F-4B13-8528-4C8F38ADEBBE"
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.projectName",
+      "value": "rssnews"
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.projectBaseDir",
+      "value": "D:\\docker-rss\\aspnetcore"
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.working.directory",
+      "value": "D:\\docker-rss\\aspnetcore\\.sonarqube\\out\\.sonar\\mod0"
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.sourceEncoding",
+      "value": "utf-8"
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.tests",
+      "value": ""
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.sources",
+      "value": "D:\\docker-rss\\aspnetcore\\AppHost.cs,D:\\docker-rss\\aspnetcore\\Configure.Auth.cs,D:\\docker-rss\\aspnetcore\\Configure.AuthRepository.cs,D:\\docker-rss\\aspnetcore\\Configure.Db.cs,D:\\docker-rss\\aspnetcore\\Controllers\\HealthController.cs,D:\\docker-rss\\aspnetcore\\Controllers\\InertiaController.cs,D:\\docker-rss\\aspnetcore\\Controllers\\RSSController.cs,D:\\docker-rss\\aspnetcore\\Controllers\\UserManualController.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\GraphQLHealthCheck.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Handlers\\RSSNewsMutation.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Handlers\\RSSNewsQuery.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Handlers\\RSSNewsSubscription.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\InputType\\AuthorInputType.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\InputType\\CategoryInputType.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\InputType\\ItemInput.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\InputType\\ItemInputType.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\IntrospectionInterceptor.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Repository\\AuthorService.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Repository\\CategoryService.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Repository\\ItemService.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Types\\AuthorObject.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Types\\CategoryObject.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Types\\ItemObject.cs,D:\\docker-rss\\aspnetcore\\GraphQL\\Types\\MessageObject.cs,D:\\docker-rss\\aspnetcore\\Migrations\\20260223073415_SWUNewsEvents.cs,D:\\docker-rss\\aspnetcore\\Migrations\\20260223073415_SWUNewsEvents.Designer.cs,D:\\docker-rss\\aspnetcore\\Migrations\\RSSNewsDbContextModelSnapshot.cs,D:\\docker-rss\\aspnetcore\\Models\\Author.cs,D:\\docker-rss\\aspnetcore\\Models\\Category.cs,D:\\docker-rss\\aspnetcore\\Models\\Item.cs,D:\\docker-rss\\aspnetcore\\Models\\Message.cs,D:\\docker-rss\\aspnetcore\\Program.cs,D:\\docker-rss\\aspnetcore\\ServiceInterface\\AddRSSItemService.cs,D:\\docker-rss\\aspnetcore\\ServiceInterface\\BulkDeleteRSSService.cs,D:\\docker-rss\\aspnetcore\\ServiceInterface\\DeleteRSSItemService.cs,D:\\docker-rss\\aspnetcore\\ServiceInterface\\RSSItemRepository.cs,D:\\docker-rss\\aspnetcore\\ServiceInterface\\RSSItemService.cs,D:\\docker-rss\\aspnetcore\\ServiceInterface\\UpdateRSSItemService.cs,D:\\docker-rss\\aspnetcore\\ServiceModel\\RSSWebService.cs,D:\\docker-rss\\aspnetcore\\Services\\AuthService.cs,D:\\docker-rss\\aspnetcore\\Services\\GraphQLSchemaService.cs,D:\\docker-rss\\aspnetcore\\Services\\RSSFeedService.cs,D:\\docker-rss\\aspnetcore\\Services\\RSSNewsDbContext.cs,D:\\docker-rss\\aspnetcore\\Services\\SchemaExportService.cs,D:\\docker-rss\\aspnetcore\\Services\\SwitchLocalizationService.cs,D:\\docker-rss\\aspnetcore\\Swagger\\AcceptLanguageOperationFilter.cs,D:\\docker-rss\\aspnetcore\\Swagger\\AuthorizationOperationFilter.cs,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\rssnews.GlobalUsings.g.cs,\"D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs\",D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\Rss.cs,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\RssGrpc.cs,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\rssnews.AssemblyInfo.cs,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\rssnews.MvcApplicationPartsAssemblyInfo.cs,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\rssnews.RazorAssemblyInfo.cs,D:\\docker-rss\\aspnetcore\\appsettings.Development.json,D:\\docker-rss\\aspnetcore\\appsettings.json,D:\\docker-rss\\aspnetcore\\Views\\Index.cshtml,D:\\docker-rss\\aspnetcore\\Views\\Shared\\_Layout.cshtml,D:\\docker-rss\\aspnetcore\\add-first-migration.sh,D:\\docker-rss\\aspnetcore\\add-migration.sh,D:\\docker-rss\\aspnetcore\\apollo\\schema.graphql,D:\\docker-rss\\aspnetcore\\Dockerfile,D:\\docker-rss\\aspnetcore\\entrypoint.sh,D:\\docker-rss\\aspnetcore\\kestrel-improvement.sh,D:\\docker-rss\\aspnetcore\\quick-fix.sh,D:\\docker-rss\\aspnetcore\\Properties\\launchSettings.json,D:\\docker-rss\\aspnetcore\\obj\\project.assets.json,D:\\docker-rss\\aspnetcore\\obj\\rssnews.csproj.nuget.dgspec.json,D:\\docker-rss\\aspnetcore\\bin\\Debug\\net9.0\\appsettings.Development.json,D:\\docker-rss\\aspnetcore\\bin\\Debug\\net9.0\\appsettings.json,D:\\docker-rss\\aspnetcore\\bin\\Debug\\net9.0\\rssnews.deps.json,D:\\docker-rss\\aspnetcore\\bin\\Debug\\net9.0\\rssnews.runtimeconfig.json,D:\\docker-rss\\aspnetcore\\bin\\Debug\\net9.0\\rssnews.staticwebassets.endpoints.json,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\rjsmcshtml.dswa.cache.json,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\rjsmrazor.dswa.cache.json,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\rpswa.dswa.cache.json,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\rssnews.sourcelink.json,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\staticwebassets.build.endpoints.json,D:\\docker-rss\\aspnetcore\\obj\\Debug\\net9.0\\staticwebassets.build.json"
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.cs.analyzer.projectOutPaths",
+      "value": "D:\\docker-rss\\aspnetcore\\.sonarqube\\out\\0"
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.cs.roslyn.reportFilePaths",
+      "value": "D:\\docker-rss\\aspnetcore\\.sonarqube\\out\\0\\Issues.json"
+    },
+    {
+      "key": "7CBE4553-D79F-4B13-8528-4C8F38ADEBBE.sonar.cs.scanner.telemetry",
+      "value": "D:\\docker-rss\\aspnetcore\\.sonarqube\\out\\0\\Telemetry.json"
+    },
+    {
+      "key": "sonar.token",
+      "value": "***"
+    },
+    {
+      "key": "sonar.host.url",
+      "value": "http://127.0.0.1:9000"
+    },
+    {
+      "key": "sonar.visualstudio.enable",
+      "value": "false"
+    }
+  ]
+}

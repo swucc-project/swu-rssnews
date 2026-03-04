@@ -7,7 +7,7 @@
 
 using grpc = global::Grpc.Core;
 
-namespace SwuNews.gRPC {
+namespace SwuNews {
   public static partial class RSSItemService
   {
     static readonly string __ServiceName = "rssfeed.RSSItemService";
@@ -46,24 +46,24 @@ namespace SwuNews.gRPC {
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::SwuNews.gRPC.AddRSSItemRequest> __Marshaller_rssfeed_AddRSSItemRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.gRPC.AddRSSItemRequest.Parser));
+    static readonly grpc::Marshaller<global::SwuNews.AddRSSItemRequest> __Marshaller_rssfeed_AddRSSItemRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.AddRSSItemRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::SwuNews.gRPC.Item> __Marshaller_rssfeed_Item = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.gRPC.Item.Parser));
+    static readonly grpc::Marshaller<global::SwuNews.Item> __Marshaller_rssfeed_Item = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.Item.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Google.Protobuf.WellKnownTypes.Empty> __Marshaller_google_protobuf_Empty = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Google.Protobuf.WellKnownTypes.Empty.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::SwuNews.gRPC.GetRSSItemResponse> __Marshaller_rssfeed_GetRSSItemResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.gRPC.GetRSSItemResponse.Parser));
+    static readonly grpc::Marshaller<global::SwuNews.GetRSSItemsResponse> __Marshaller_rssfeed_GetRSSItemsResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.GetRSSItemsResponse.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::SwuNews.gRPC.GetRSSItemsRequest> __Marshaller_rssfeed_GetRSSItemsRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.gRPC.GetRSSItemsRequest.Parser));
+    static readonly grpc::Marshaller<global::SwuNews.GetRSSItemRequest> __Marshaller_rssfeed_GetRSSItemRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.GetRSSItemRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::SwuNews.gRPC.UpdateRSSItemRequest> __Marshaller_rssfeed_UpdateRSSItemRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.gRPC.UpdateRSSItemRequest.Parser));
+    static readonly grpc::Marshaller<global::SwuNews.UpdateRSSItemRequest> __Marshaller_rssfeed_UpdateRSSItemRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.UpdateRSSItemRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::SwuNews.gRPC.DeleteRSSItemRequest> __Marshaller_rssfeed_DeleteRSSItemRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.gRPC.DeleteRSSItemRequest.Parser));
+    static readonly grpc::Marshaller<global::SwuNews.DeleteRSSItemRequest> __Marshaller_rssfeed_DeleteRSSItemRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.DeleteRSSItemRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::SwuNews.gRPC.DeleteRSSItemResponse> __Marshaller_rssfeed_DeleteRSSItemResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.gRPC.DeleteRSSItemResponse.Parser));
+    static readonly grpc::Marshaller<global::SwuNews.DeleteRSSItemResponse> __Marshaller_rssfeed_DeleteRSSItemResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SwuNews.DeleteRSSItemResponse.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::SwuNews.gRPC.AddRSSItemRequest, global::SwuNews.gRPC.Item> __Method_AddRSSItem = new grpc::Method<global::SwuNews.gRPC.AddRSSItemRequest, global::SwuNews.gRPC.Item>(
+    static readonly grpc::Method<global::SwuNews.AddRSSItemRequest, global::SwuNews.Item> __Method_AddRSSItem = new grpc::Method<global::SwuNews.AddRSSItemRequest, global::SwuNews.Item>(
         grpc::MethodType.Unary,
         __ServiceName,
         "AddRSSItem",
@@ -71,23 +71,23 @@ namespace SwuNews.gRPC {
         __Marshaller_rssfeed_Item);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Google.Protobuf.WellKnownTypes.Empty, global::SwuNews.gRPC.GetRSSItemResponse> __Method_GetRSSItems = new grpc::Method<global::Google.Protobuf.WellKnownTypes.Empty, global::SwuNews.gRPC.GetRSSItemResponse>(
+    static readonly grpc::Method<global::Google.Protobuf.WellKnownTypes.Empty, global::SwuNews.GetRSSItemsResponse> __Method_GetRSSItems = new grpc::Method<global::Google.Protobuf.WellKnownTypes.Empty, global::SwuNews.GetRSSItemsResponse>(
         grpc::MethodType.Unary,
         __ServiceName,
         "GetRSSItems",
         __Marshaller_google_protobuf_Empty,
-        __Marshaller_rssfeed_GetRSSItemResponse);
+        __Marshaller_rssfeed_GetRSSItemsResponse);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::SwuNews.gRPC.GetRSSItemsRequest, global::SwuNews.gRPC.Item> __Method_GetRSSItemByID = new grpc::Method<global::SwuNews.gRPC.GetRSSItemsRequest, global::SwuNews.gRPC.Item>(
+    static readonly grpc::Method<global::SwuNews.GetRSSItemRequest, global::SwuNews.Item> __Method_GetRSSItemByID = new grpc::Method<global::SwuNews.GetRSSItemRequest, global::SwuNews.Item>(
         grpc::MethodType.Unary,
         __ServiceName,
         "GetRSSItemByID",
-        __Marshaller_rssfeed_GetRSSItemsRequest,
+        __Marshaller_rssfeed_GetRSSItemRequest,
         __Marshaller_rssfeed_Item);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::SwuNews.gRPC.UpdateRSSItemRequest, global::SwuNews.gRPC.Item> __Method_UpdateRSSItem = new grpc::Method<global::SwuNews.gRPC.UpdateRSSItemRequest, global::SwuNews.gRPC.Item>(
+    static readonly grpc::Method<global::SwuNews.UpdateRSSItemRequest, global::SwuNews.Item> __Method_UpdateRSSItem = new grpc::Method<global::SwuNews.UpdateRSSItemRequest, global::SwuNews.Item>(
         grpc::MethodType.Unary,
         __ServiceName,
         "UpdateRSSItem",
@@ -95,7 +95,7 @@ namespace SwuNews.gRPC {
         __Marshaller_rssfeed_Item);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::SwuNews.gRPC.DeleteRSSItemRequest, global::SwuNews.gRPC.DeleteRSSItemResponse> __Method_DeleteRSSItem = new grpc::Method<global::SwuNews.gRPC.DeleteRSSItemRequest, global::SwuNews.gRPC.DeleteRSSItemResponse>(
+    static readonly grpc::Method<global::SwuNews.DeleteRSSItemRequest, global::SwuNews.DeleteRSSItemResponse> __Method_DeleteRSSItem = new grpc::Method<global::SwuNews.DeleteRSSItemRequest, global::SwuNews.DeleteRSSItemResponse>(
         grpc::MethodType.Unary,
         __ServiceName,
         "DeleteRSSItem",
@@ -105,7 +105,7 @@ namespace SwuNews.gRPC {
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.Services[0]; }
+      get { return global::SwuNews.RssReflection.Descriptor.Services[0]; }
     }
 
     /// <summary>Base class for server-side implementations of RSSItemService</summary>
@@ -113,31 +113,31 @@ namespace SwuNews.gRPC {
     public abstract partial class RSSItemServiceBase
     {
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::SwuNews.gRPC.Item> AddRSSItem(global::SwuNews.gRPC.AddRSSItemRequest request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::SwuNews.Item> AddRSSItem(global::SwuNews.AddRSSItemRequest request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::SwuNews.gRPC.GetRSSItemResponse> GetRSSItems(global::Google.Protobuf.WellKnownTypes.Empty request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::SwuNews.GetRSSItemsResponse> GetRSSItems(global::Google.Protobuf.WellKnownTypes.Empty request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::SwuNews.gRPC.Item> GetRSSItemByID(global::SwuNews.gRPC.GetRSSItemsRequest request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::SwuNews.Item> GetRSSItemByID(global::SwuNews.GetRSSItemRequest request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::SwuNews.gRPC.Item> UpdateRSSItem(global::SwuNews.gRPC.UpdateRSSItemRequest request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::SwuNews.Item> UpdateRSSItem(global::SwuNews.UpdateRSSItemRequest request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::SwuNews.gRPC.DeleteRSSItemResponse> DeleteRSSItem(global::SwuNews.gRPC.DeleteRSSItemRequest request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::SwuNews.DeleteRSSItemResponse> DeleteRSSItem(global::SwuNews.DeleteRSSItemRequest request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -164,11 +164,11 @@ namespace SwuNews.gRPC {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     public static void BindService(grpc::ServiceBinderBase serviceBinder, RSSItemServiceBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_AddRSSItem, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SwuNews.gRPC.AddRSSItemRequest, global::SwuNews.gRPC.Item>(serviceImpl.AddRSSItem));
-      serviceBinder.AddMethod(__Method_GetRSSItems, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Google.Protobuf.WellKnownTypes.Empty, global::SwuNews.gRPC.GetRSSItemResponse>(serviceImpl.GetRSSItems));
-      serviceBinder.AddMethod(__Method_GetRSSItemByID, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SwuNews.gRPC.GetRSSItemsRequest, global::SwuNews.gRPC.Item>(serviceImpl.GetRSSItemByID));
-      serviceBinder.AddMethod(__Method_UpdateRSSItem, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SwuNews.gRPC.UpdateRSSItemRequest, global::SwuNews.gRPC.Item>(serviceImpl.UpdateRSSItem));
-      serviceBinder.AddMethod(__Method_DeleteRSSItem, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SwuNews.gRPC.DeleteRSSItemRequest, global::SwuNews.gRPC.DeleteRSSItemResponse>(serviceImpl.DeleteRSSItem));
+      serviceBinder.AddMethod(__Method_AddRSSItem, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SwuNews.AddRSSItemRequest, global::SwuNews.Item>(serviceImpl.AddRSSItem));
+      serviceBinder.AddMethod(__Method_GetRSSItems, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Google.Protobuf.WellKnownTypes.Empty, global::SwuNews.GetRSSItemsResponse>(serviceImpl.GetRSSItems));
+      serviceBinder.AddMethod(__Method_GetRSSItemByID, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SwuNews.GetRSSItemRequest, global::SwuNews.Item>(serviceImpl.GetRSSItemByID));
+      serviceBinder.AddMethod(__Method_UpdateRSSItem, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SwuNews.UpdateRSSItemRequest, global::SwuNews.Item>(serviceImpl.UpdateRSSItem));
+      serviceBinder.AddMethod(__Method_DeleteRSSItem, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::SwuNews.DeleteRSSItemRequest, global::SwuNews.DeleteRSSItemResponse>(serviceImpl.DeleteRSSItem));
     }
 
   }

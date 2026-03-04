@@ -25,23 +25,29 @@ namespace rssnews.Migrations
             modelBuilder.Entity("rssnews.Models.Author", b =>
                 {
                     b.Property<string>("AuthorID")
-                        .HasColumnType("nvarchar(450)")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
                         .HasColumnName("AuthorID");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
                         .HasColumnName("FirstName");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
                         .HasColumnName("LastName");
 
                     b.HasKey("AuthorID")
                         .HasName("PK_Author");
 
-                    b.ToTable("Author");
+                    b.HasIndex("FirstName", "LastName")
+                        .HasDatabaseName("IX_Author_Name");
+
+                    b.ToTable("Author", (string)null);
                 });
 
             modelBuilder.Entity("rssnews.Models.Category", b =>
@@ -55,35 +61,36 @@ namespace rssnews.Migrations
 
                     b.Property<string>("CategoryName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
                         .HasColumnName("CategoryName");
 
                     b.HasKey("CategoryID")
                         .HasName("PK_Category");
 
-                    b.ToTable("Category");
+                    b.HasIndex("CategoryName")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Category_CategoryName");
+
+                    b.ToTable("Category", (string)null);
                 });
 
             modelBuilder.Entity("rssnews.Models.Item", b =>
                 {
                     b.Property<string>("ItemID")
-                        .HasColumnType("nvarchar(450)")
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)")
                         .HasColumnName("ItemID");
 
                     b.Property<string>("AuthorID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
                         .HasColumnName("AuthorID");
-
-                    b.Property<string>("AuthorID1")
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("CategoryID")
                         .HasColumnType("int")
                         .HasColumnName("CategoryID");
-
-                    b.Property<int?>("CategoryID1")
-                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -92,55 +99,50 @@ namespace rssnews.Migrations
 
                     b.Property<string>("Link")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
                         .HasColumnName("Link");
 
                     b.Property<DateTime>("PublishedDate")
                         .HasColumnType("datetime2")
-                        .HasColumnName("Published_Date");
+                        .HasColumnName("PublishedDate");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
                         .HasColumnName("Title");
 
                     b.HasKey("ItemID")
                         .HasName("PK_Item");
 
-                    b.HasIndex("AuthorID");
+                    b.HasIndex("AuthorID")
+                        .HasDatabaseName("IX_Item_AuthorID");
 
-                    b.HasIndex("AuthorID1");
+                    b.HasIndex("CategoryID")
+                        .HasDatabaseName("IX_Item_CategoryID");
 
-                    b.HasIndex("CategoryID");
+                    b.HasIndex("PublishedDate")
+                        .HasDatabaseName("IX_Item_PublishedDate");
 
-                    b.HasIndex("CategoryID1");
-
-                    b.ToTable("Item");
+                    b.ToTable("Item", (string)null);
                 });
 
             modelBuilder.Entity("rssnews.Models.Item", b =>
                 {
                     b.HasOne("rssnews.Models.Author", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Author");
-
-                    b.HasOne("rssnews.Models.Author", null)
                         .WithMany("Items")
-                        .HasForeignKey("AuthorID1");
+                        .HasForeignKey("AuthorID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Item_Author");
 
                     b.HasOne("rssnews.Models.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Category");
-
-                    b.HasOne("rssnews.Models.Category", null)
                         .WithMany("Items")
-                        .HasForeignKey("CategoryID1");
+                        .HasForeignKey("CategoryID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Item_Category");
 
                     b.Navigation("Author");
 

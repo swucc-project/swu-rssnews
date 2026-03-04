@@ -1,116 +1,116 @@
 #!/bin/bash
+# /aspnetcore/entrypoint.sh
 set -e
 
 echo "🚀 Starting ASP.NET Core Application..."
 echo "════════════════════════════════════════"
 
-# ตั้งค่า Locale และ Timezone
-export LANG=th_TH.UTF-8
-export LC_ALL=th_TH.UTF-8
-export TZ=Asia/Bangkok
+# Locale และ Timezone
+export LANG=${LANG:-th_TH.UTF-8}
+export LC_ALL=${LC_ALL:-th_TH.UTF-8}
+export TZ=${TZ:-Asia/Bangkok}
 
 echo "🌐 Locale: $LANG"
 echo "🕐 Timezone: $TZ"
 
-# ตรวจสอบและโหลด database password
+# ═══════════════════════════════════════════════════════════
+# ⚠️  IMPORTANT: Migration Notice
+# ═══════════════════════════════════════════════════════════
 echo ""
-echo "🔐 Loading database credentials..."
+echo "📢 MIGRATION NOTICE:"
+echo "   This container does NOT have EF Core tools installed."
+echo "   To run migrations, use the migration scripts:"
+echo "   • ./aspnetcore/add-first-migration.sh  (create migrations)"
+echo "   • ./aspnetcore/quick-fix.sh            (apply migrations)"
+echo ""
+echo "   Migrations must be run from the HOST machine,"
+echo "   NOT from inside this container."
+echo "════════════════════════════════════════"
+echo ""
 
+# Load password from secret
 if [ -z "$MSSQL_SA_PASSWORD" ]; then
   if [ -n "$MSSQL_SA_PASSWORD_FILE" ] && [ -f "$MSSQL_SA_PASSWORD_FILE" ]; then
-    export MSSQL_SA_PASSWORD=$(cat "$MSSQL_SA_PASSWORD_FILE" | tr -d '\n' | tr -d '\r')
-    echo "✅ Loaded password from secret file: $MSSQL_SA_PASSWORD_FILE"
+    export MSSQL_SA_PASSWORD=$(cat "$MSSQL_SA_PASSWORD_FILE" | tr -d '[:space:]')
+    echo "✅ Loaded password from secret file"
   else
-    echo "❌ ERROR: Password file not found at $MSSQL_SA_PASSWORD_FILE"
+    echo "❌ ERROR: Password not found"
     exit 1
   fi
-else
-  echo "✅ Using password from environment variable"
 fi
 
-if [ -z "$MSSQL_SA_PASSWORD" ]; then
-  echo "❌ ERROR: MSSQL_SA_PASSWORD is empty"
-  exit 1
-fi
-
-echo "✅ Password loaded successfully (length: ${#MSSQL_SA_PASSWORD})"
-
-# ตรวจสอบค่า environment variables
 DATABASE_HOST=${DATABASE_HOST:-mssql}
 DATABASE_NAME=${DATABASE_NAME:-RSSActivityWeb}
 
-echo ""
-echo "🗄️  Database Configuration:"
-echo "   Host: $DATABASE_HOST"
-echo "   Database: $DATABASE_NAME"
-echo "   User: sa"
+echo "🗄️  Database: $DATABASE_NAME @ $DATABASE_HOST"
 
-# รอให้ SQL Server พร้อม
-echo ""
-echo "⏳ Waiting for SQL Server to be ready..."
-echo "────────────────────────────────────────"
-
+# Wait for SQL Server
+echo "⏳ Waiting for SQL Server..."
 max_attempts=60
 attempt=0
-connected=false
 
 while [ $attempt -lt $max_attempts ]; do
-  if /opt/mssql-tools18/bin/sqlcmd -S "$DATABASE_HOST" -U sa -P "$MSSQL_SA_PASSWORD" -Q "SELECT 1" -b -C &> /dev/null; then
-    connected=true
+  if /opt/mssql-tools18/bin/sqlcmd -S "$DATABASE_HOST" -U sa -P "$MSSQL_SA_PASSWORD" -Q "SELECT 1" -C -b &>/dev/null; then
+    echo "✅ SQL Server is ready"
     break
   fi
-  
-  attempt=$(($attempt + 1))
-  echo "⏱️  Waiting for SQL Server... (attempt $attempt/$max_attempts)"
+  attempt=$((attempt + 1))
+  [ $((attempt % 10)) -eq 0 ] && echo "⏱️  Waiting... ($attempt/$max_attempts)"
   sleep 2
 done
 
-if [ "$connected" = false ]; then
-  echo ""
-  echo "❌ ERROR: SQL Server not ready after $max_attempts attempts"
-  echo "────────────────────────────────────────"
-  echo "Troubleshooting steps:"
-  echo "1. Check if SQL Server container is running: docker ps"
-  echo "2. Check SQL Server logs: docker logs sqlserver"
-  echo "3. Verify password in secrets/db_password.txt"
-  echo "4. Try manual connection: docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa"
-  echo ""
-  echo "Testing connection manually..."
-  /opt/mssql-tools18/bin/sqlcmd -S "$DATABASE_HOST" -U sa -P "$MSSQL_SA_PASSWORD" -Q "SELECT 1" -C 2>&1 || true
+if [ $attempt -ge $max_attempts ]; then
+  echo "❌ SQL Server not ready after $max_attempts attempts"
   exit 1
 fi
 
-echo ""
-echo "✅ SQL Server is up and running"
-echo "════════════════════════════════════════"
+# Check/Create database
+echo "🔍 Checking database..."
+DB_EXISTS=$(/opt/mssql-tools18/bin/sqlcmd -S "$DATABASE_HOST" -U sa -P "$MSSQL_SA_PASSWORD" \
+  -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.databases WHERE name = '$DATABASE_NAME'" -h -1 -W -C 2>/dev/null | tr -d '[:space:]')
 
-# ตรวจสอบว่า database มีอยู่หรือไม่
-echo ""
-echo "🔍 Checking database existence..."
-
-DB_EXISTS=$(/opt/mssql-tools18/bin/sqlcmd -S "$DATABASE_HOST" -U sa -P "$MSSQL_SA_PASSWORD" -Q "SELECT COUNT(*) FROM sys.databases WHERE name = '$DATABASE_NAME'" -h -1 -W -C 2>/dev/null | tr -d ' ' | tr -d '\n' | tr -d '\r')
-
-echo "Database check result: '$DB_EXISTS'"
-
-if [ -z "$DB_EXISTS" ] || [ "$DB_EXISTS" = "0" ]; then
-  echo "⚠️  Database '$DATABASE_NAME' does not exist or cannot be verified"
-  echo ""
-  echo "Available databases:"
-  /opt/mssql-tools18/bin/sqlcmd -S "$DATABASE_HOST" -U sa -P "$MSSQL_SA_PASSWORD" -Q "SELECT name FROM sys.databases" -C
-  echo ""
-  echo "Attempting to proceed anyway (EF Core will handle it)..."
+if [ "$DB_EXISTS" != "1" ]; then
+  echo "🛠️  Creating database '$DATABASE_NAME'..."
+  /opt/mssql-tools18/bin/sqlcmd -S "$DATABASE_HOST" -U sa -P "$MSSQL_SA_PASSWORD" \
+    -Q "CREATE DATABASE [$DATABASE_NAME]" -C
+  echo "✅ Database created"
 else
-  echo "✅ Database '$DATABASE_NAME' exists"
+  echo "✅ Database exists"
+fi
+
+# Check if migrations need to be applied
+echo ""
+echo "🔍 Checking migration status..."
+PENDING_MIGRATIONS=$(/opt/mssql-tools18/bin/sqlcmd -S "$DATABASE_HOST" -U sa -P "$MSSQL_SA_PASSWORD" -d "$DATABASE_NAME" \
+  -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '__EFMigrationsHistory'" -h -1 -W -C 2>/dev/null | tr -d '[:space:]')
+
+if [ "$PENDING_MIGRATIONS" = "0" ]; then
+  echo ""
+  echo "⚠️  ════════════════════════════════════════════════════════"
+  echo "⚠️  WARNING: No migrations have been applied!"
+  echo "⚠️  ════════════════════════════════════════════════════════"
+  echo "⚠️  "
+  echo "⚠️  The database exists but has no schema."
+  echo "⚠️  You need to run migrations before the app will work."
+  echo "⚠️  "
+  echo "⚠️  Run from your HOST machine (NOT from inside container):"
+  echo "⚠️  "
+  echo "⚠️    ./aspnetcore/quick-fix.sh"
+  echo "⚠️  "
+  echo "⚠️  ════════════════════════════════════════════════════════"
+  echo ""
+  echo "⏸️  Application will start but may fail without migrations..."
+  echo ""
+else
+  echo "✅ Migrations have been applied"
 fi
 
 echo ""
 echo "════════════════════════════════════════"
-echo "▶️  Starting ASP.NET Core application..."
+echo "▶️  Starting application..."
 echo "════════════════════════════════════════"
-echo ""
 echo "Environment: $ASPNETCORE_ENVIRONMENT"
-echo "Listening on: $ASPNETCORE_URLS"
 echo ""
 
-# เริ่มต้น application
+cd /var/www/rssnews
 exec dotnet rssnews.dll

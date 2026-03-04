@@ -1,3 +1,3 @@
 #!/bin/bash
 echo "⚠️ Running fallback GraphQL codegen (placeholders)"
-npm run assure-files
+node scripts/assure-graphql-files.mjs

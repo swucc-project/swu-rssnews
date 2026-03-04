@@ -20,7 +20,7 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit 1
 }
 
-$RuleName = "Docker - OpenSSH"
+$RuleName = "Docker - OpenSSH ($Port)"
 
 function Enable-SSHFirewallRule {
     param(
@@ -48,23 +48,26 @@ function Enable-SSHFirewallRule {
     switch ($Level) {
         'Strict' {
             # เฉพาะ localhost เท่านั้น
-            $params['Profile'] = "Domain,Private"
-            $params['RemoteAddress'] = "127.0.0.1", "::1"
+            $params['Profile'] = @("Domain","Private")
+            $params['RemoteAddress'] = @("127.0.0.1", "::1")
+            $params['EdgeTraversalPolicy'] = 'Block'
             $params['Description'] = "Allow SSH from localhost only (Strict)"
             Write-Host "🔒 Mode: Localhost only" -ForegroundColor Green
         }
         
         'Medium' {
             # เฉพาะ Local Subnet
-            $params['Profile'] = "Domain,Private"
-            $params['RemoteAddress'] = "LocalSubnet"
+            $params['Profile'] = @("Domain","Private")
+            $params['RemoteAddress'] = @("LocalSubnet")
+            $params['EdgeTraversalPolicy'] = 'Block'
             $params['Description'] = "Allow SSH from local network only (Medium)"
             Write-Host "🔒 Mode: Local network only" -ForegroundColor Yellow
         }
         
         'Permissive' {
             # ทุก network (⚠️ ไม่แนะนำสำหรับ production)
-            $params['Profile'] = "Domain,Private,Public"
+            $params['Profile'] = @("Domain","Private","Public")
+            $params['EdgeTraversalPolicy'] = 'Block'
             $params['Description'] = "Allow SSH from any network (Permissive - Use with caution)"
             Write-Host "⚠️  Mode: All networks (NOT RECOMMENDED)" -ForegroundColor Red
         }
@@ -128,7 +131,7 @@ function Show-SSHFirewallStatus {
         Write-Host "  Remote Address: $($addressFilter.RemoteAddress)" -ForegroundColor White
         
         # แสดงคำเตือนถ้าเปิด Public profile
-        if ($rule.Profile -match "Public") {
+        if ($rule.Profile -contains "Public") {
             Write-Host "`n⚠️  WARNING: Rule is enabled for Public networks!" -ForegroundColor Red
             Write-Host "   This may pose a security risk." -ForegroundColor Yellow
         }
@@ -160,7 +163,10 @@ function Test-SSHConnection {
     
     # ทดสอบว่า port 22 เปิดอยู่หรือไม่
     try {
-        $connection = Test-NetConnection -ComputerName localhost -Port $Port -WarningAction SilentlyContinue
+        $connection = Test-NetConnection -ComputerName localhost -Port $Port -InformationLevel Quiet
+        if ($ok) {
+            Write-Host "✅ Port $Port is open" -ForegroundColor Green
+        }
         
         if ($connection.TcpTestSucceeded) {
             Write-Host "✅ Port $Port is open and accepting connections" -ForegroundColor Green

@@ -3,8 +3,6 @@ using rssnews.GraphQL.InputType;
 using rssnews.GraphQL.Repository;
 using HotChocolate.Authorization;
 using HotChocolate.Subscriptions;
-// using HotChocolate.Types; // ไม่ได้ใช้งานโดยตรง
-using Microsoft.Extensions.Logging; // เพิ่ม namespace สำหรับ ILogger
 
 namespace rssnews.GraphQL.Handlers
 {
@@ -16,20 +14,21 @@ namespace rssnews.GraphQL.Handlers
             [Service] IItemService itemService,
             [Service] ILogger<RSSNewsMutation> logger,
             [Service] ITopicEventSender eventSender,
-            [GraphQLType<NonNullType<ItemInputType>>] ItemInput itemInput) // ใช้ ItemInputType ที่สร้างจาก ItemInput
+            [GraphQLName("input")]
+            [GraphQLType<NonNullType<ItemInputType>>] ItemInput input)
         {
             try
             {
-                var item = new Item
+                var newItemModel = new Item
                 {
-                    Title = itemInput.Title,
-                    Link = itemInput.Link,
-                    Description = itemInput.Description,
-                    PublishedDate = itemInput.PublishedDate,
-                    CategoryID = itemInput.CategoryId, // ใช้ CategoryId
-                    AuthorID = itemInput.AuthorId,     // ใช้ AuthorId
+                    Title = input.Title,
+                    Link = input.Link,
+                    Description = input.Description,
+                    PublishedDate = input.PublishedDate,
+                    CategoryID = input.CategoryId,
+                    AuthorID = input.AuthorId,
                 };
-                var newItem = await itemService.AddRSSItem(item);
+                var newItem = await itemService.AddRSSItem(newItemModel);
                 await eventSender.SendAsync("OnItemAdded", newItem);
                 return newItem;
             }
@@ -47,7 +46,8 @@ namespace rssnews.GraphQL.Handlers
             [Service] ILogger<RSSNewsMutation> logger,
             [Service] ITopicEventSender eventSender,
             string id,
-            [GraphQLType<NonNullType<ItemInputType>>] ItemInput itemInput) // ใช้ ItemInputType ที่สร้างจาก ItemInput
+            [GraphQLName("input")]
+            [GraphQLType<NonNullType<ItemInputType>>] ItemInput input)
         {
             try
             {
@@ -57,12 +57,12 @@ namespace rssnews.GraphQL.Handlers
                 var updatedItemModel = new Item
                 {
                     // ItemID จะถูกละเว้นในการอัปเดตใน service เพราะเราหาจาก ID ที่ให้มา
-                    Title = itemInput.Title,
-                    Link = itemInput.Link,
-                    Description = itemInput.Description,
-                    PublishedDate = itemInput.PublishedDate,
-                    CategoryID = itemInput.CategoryId,
-                    AuthorID = itemInput.AuthorId,
+                    Title = input.Title,
+                    Link = input.Link,
+                    Description = input.Description,
+                    PublishedDate = input.PublishedDate,
+                    CategoryID = input.CategoryId,
+                    AuthorID = input.AuthorId,
                 };
 
                 logger.LogInformation("Updating item with ID: {ID}", id);
@@ -80,7 +80,7 @@ namespace rssnews.GraphQL.Handlers
         [Authorize(Policy = "AdminPolicy")]
         [GraphQLDescription("Deletes an RSS item by ID.")]
         // เปลี่ยน return type เป็น string หรือ bool เพื่อบอกว่าลบสำเร็จหรือไม่ หรือ ID ของสิ่งที่ถูกลบ
-        public async Task<string> DeleteRSSItem(
+        public async Task<string> DeleteRssItem(
             [Service] IItemService itemService,
             [Service] ILogger<RSSNewsMutation> logger,
             [Service] ITopicEventSender eventSender,
@@ -103,6 +103,20 @@ namespace rssnews.GraphQL.Handlers
                 logger.LogError(ex, "Error deleting item");
                 throw new GraphQLException($"Error deleting item: {ex.Message}");
             }
+        }
+
+        public async Task<Message> SendBulkMessage(string content, string type, [Service] ITopicEventSender sender, CancellationToken cancellationToken)
+        {
+            var message = new Message
+            {
+                Content = content,
+                Type = type,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await sender.SendAsync("BulkMessageTopic", message, cancellationToken);
+
+            return message;
         }
     }
 }

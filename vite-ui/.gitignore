@@ -1,7 +1,0 @@
-# Apollo
-apollo/schema.graphql
-apollo/generated/
-.roverrc
-
-# Rover
-.rover/

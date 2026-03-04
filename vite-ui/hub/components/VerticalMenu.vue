@@ -1,25 +1,21 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { useQuery } from '@vue/apollo-composable';
-import gql from 'graphql-tag';
-import { CATEGORY_FIELDS } from '@generated/fragments';
+import { useCategoryStore } from '@hub/joints/deployCategoryStore';
 import LoadingSpinner from '@components/general/LoadingSpinner.vue';
 import FailureNotice from '@components/general/FailureNotice.vue';
 
 const page = usePage();
+const categoryStore = useCategoryStore();
 
-const GET_CATEGORIES_QUERY = gql`
-    query GetCategories {
-        categories {
-            ...CategoryFields
-        }
-    }
-    ${CATEGORY_FIELDS}
-`;
+// ดึงข้อมูล categories เมื่อ component mount
+onMounted(() => {
+    categoryStore.fetchCategories();
+});
 
-const { result, loading, error } = useQuery(GET_CATEGORIES_QUERY);
-const categories = computed(() => result.value?.categories ?? []);
+const categories = computed(() => categoryStore.categories);
+const loading = computed(() => categoryStore.loading);
+const error = computed(() => categoryStore.error);
 const currentCategoryId = computed(() => page.props.categoryId);
 
 const isActiveCategory = (categoryId) => {

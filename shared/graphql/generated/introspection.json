@@ -1,0 +1,16 @@
+{
+  "possibleTypes": {},
+  "__schema": {
+    "queryType": {
+      "name": "Query"
+    },
+    "mutationType": {
+      "name": "Mutation"
+    },
+    "subscriptionType": {
+      "name": "Subscription"
+    },
+    "types": [],
+    "directives": []
+  }
+}

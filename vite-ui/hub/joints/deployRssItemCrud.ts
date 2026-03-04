@@ -8,7 +8,7 @@ import {
     useDeleteItemMutation,
     type ItemObject,
 } from '@generated/graphql';
-import { useNotification } from '@suites/notificationPlugin'; // import plugin ของเรา
+import { pushNotification } from '@suites/pushNotification';
 
 export const useRssItemStore = defineStore('rssItems', () => {
     // === State ===
@@ -18,7 +18,7 @@ export const useRssItemStore = defineStore('rssItems', () => {
     const loadingItem = ref(false);
     const error = ref<Error | null>(null);
 
-    const notification = useNotification(); // ใช้งาน plugin
+    const notification = pushNotification(); // ใช้งาน plugin
 
     // === Actions ===
 

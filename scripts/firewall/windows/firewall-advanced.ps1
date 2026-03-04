@@ -2,11 +2,11 @@
 # Advanced Windows Firewall configuration with logging and monitoring
 
 param(
-    [Parameter(Mandatory=$false)]
-    [ValidateSet('Enable','Disable','Monitor','Export','Import')]
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('Enable', 'Disable', 'Monitor', 'Export', 'Import')]
     [string]$Action = 'Enable',
     
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [string]$ExportPath = ".\firewall-backup.json"
 )
 
@@ -18,13 +18,38 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 # Port configurations
 $DevPorts = @{
-    "ASP.NET Core API" = @{Port=5000; Protocol="TCP"; Profile="Domain,Private"}
-    "Vite Dev Server" = @{Port=5173; Protocol="TCP"; Profile="Domain,Private"}
-    "Nginx Dev HTTP" = @{Port=8080; Protocol="TCP"; Profile="Domain,Private"}
-    "SSR Server" = @{Port=13714; Protocol="TCP"; Profile="Domain,Private"}
-    "Vite HMR WebSocket" = @{Port=24678; Protocol="TCP"; Profile="Domain,Private"}
-    "SQL Server" = @{Port=1433; Protocol="TCP"; Profile="Domain,Private"; RemoteAddress="127.0.0.1,::1,LocalSubnet"}
-    "OpenSSH Server" = @{Port=22; Protocol="TCP"; Profile="Domain,Private"; RemoteAddress="LocalSubnet"}
+    "ASP.NET Core API"   = @{
+        Port     = 5000 
+        Protocol = "TCP"
+        Profile  = @("Domain", "Private")
+    }
+    "Vite Dev Server"    = @{
+        Port     = 5173
+        Protocol = "TCP"
+        Profile  = @("Domain", "Private")
+    }
+    "Nginx Dev HTTP"     = @{
+        Port     = 8080
+        Protocol = "TCP"
+        Profile  = @("Domain", "Private")
+    }
+    "Vite HMR WebSocket" = @{
+        Port     = 24678
+        Protocol = "TCP"
+        Profile  = @("Domain", "Private")
+    }
+    "SQL Server"         = @{
+        Port          = 1433
+        Protocol      = "TCP"
+        Profile       = @("Domain", "Private")
+        RemoteAddress = @("127.0.0.1,::1,LocalSubnet")
+    }
+    "OpenSSH Server"     = @{
+        Port          = 22
+        Protocol      = "TCP"
+        Profile       = @("Domain", "Private")
+        RemoteAddress = "LocalSubnet"
+    }
 }
 
 function Enable-AdvancedRules {
@@ -40,12 +65,12 @@ function Enable-AdvancedRules {
         # Create new rule with logging
         $params = @{
             DisplayName = $ruleName
-            Direction = "Inbound"
-            LocalPort = $config.Port
-            Protocol = $config.Protocol
-            Action = "Allow"
-            Profile = $config.Profile
-            Enabled = $true
+            Direction   = "Inbound"
+            LocalPort   = $config.Port
+            Protocol    = $config.Protocol
+            Action      = "Allow"
+            Profile     = $config.Profile
+            Enabled     = $true
         }
         
         # Add remote address restriction if specified
@@ -54,14 +79,17 @@ function Enable-AdvancedRules {
         }
         
         # Create rule
-        $rule = New-NetFirewallRule @params
+        New-NetFirewallRule @params
         
         # Enable logging for this rule (requires Group Policy or manual configuration)
         Write-Host "✅ Created: $ruleName (Port $($config.Port))" -ForegroundColor Green
     }
     
     # Enable firewall logging
-    Set-NetFirewallProfile -All -LogAllowed True -LogBlocked True -LogMaxSizeKilobytes 4096
+    Set-NetFirewallProfile -All `
+        -LogAllowed $true `
+        -LogBlocked $true `
+        -LogMaxSizeKilobytes 4096
     
     Write-Host "`n✅ Advanced rules configured with logging enabled" -ForegroundColor Green
 }
@@ -71,14 +99,20 @@ function Export-FirewallRules {
     
     Write-Host "`n💾 Exporting firewall rules..." -ForegroundColor Cyan
     
-    $rules = Get-NetFirewallRule | Where-Object {$_.DisplayName -like "Docker -*"} | 
-        Select-Object DisplayName, Enabled, Direction, Action, Profile, @{
-            Name='Port'
-            Expression={(Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_).LocalPort}
-        }, @{
-            Name='Protocol'
-            Expression={(Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_).Protocol}
+    $rules = Get-NetFirewallRule | Where-Object { $_.DisplayName -like "Docker -*" } | 
+    Select-Object DisplayName, Enabled, Direction, Action, Profile, @{
+        Name       = 'Port'
+        Expression = {
+            (Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_ |
+            Select-Object -ExpandProperty LocalPort) -join ","
         }
+    }, @{
+        Name       = 'Protocol'
+        Expression = {
+            (Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_ |
+            Select-Object -ExpandProperty Protocol) -join ","
+        }
+    }
     
     $rules | ConvertTo-Json | Out-File -FilePath $Path -Encoding UTF8
     
@@ -100,12 +134,12 @@ function Import-FirewallRules {
     foreach ($rule in $rules) {
         $params = @{
             DisplayName = $rule.DisplayName
-            Direction = $rule.Direction
-            LocalPort = $rule.Port
-            Protocol = $rule.Protocol
-            Action = $rule.Action
-            Profile = $rule.Profile
-            Enabled = $rule.Enabled
+            Direction   = $rule.Direction
+            LocalPort   = $rule.Port -split ","
+            Protocol    = $rule.Protocol
+            Action      = $rule.Action
+            Profile     = $rule.Profile
+            Enabled     = $rule.Enabled
         }
         
         Remove-NetFirewallRule -DisplayName $rule.DisplayName -ErrorAction SilentlyContinue
@@ -125,14 +159,14 @@ function Show-FirewallMonitoring {
     
     # Show Docker rules
     Write-Host "`n📋 Docker Rules:" -ForegroundColor Yellow
-    Get-NetFirewallRule | Where-Object {$_.DisplayName -like "Docker -*"} | 
-        Select-Object DisplayName, Enabled, Direction, Action | Format-Table -AutoSize
+    Get-NetFirewallRule | Where-Object { $_.DisplayName -like "Docker -*" } | 
+    Select-Object DisplayName, Enabled, Direction, Action | Format-Table -AutoSize
     
     # Show recent blocked connections (from log file)
     $logPath = "C:\Windows\System32\LogFiles\Firewall\pfirewall.log"
     if (Test-Path $logPath) {
         Write-Host "`n🚫 Recent Blocked Connections (last 10):" -ForegroundColor Yellow
-        Get-Content $logPath -Tail 10 | Where-Object {$_ -match "DROP"} | Format-Table -AutoSize
+        Get-Content $logPath -Tail 10 | Where-Object { $_ -match "DROP" } | Format-Table -AutoSize
     }
 }
 

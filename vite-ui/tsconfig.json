@@ -13,6 +13,8 @@
         "moduleResolution": "bundler",
         "resolveJsonModule": true,
         "allowImportingTsExtensions": true,
+        "allowJs": true,
+        "checkJs": false,
         "types": [
             "vite/client",
             "node",
@@ -28,6 +30,7 @@
         "forceConsistentCasingInFileNames": true,
         "verbatimModuleSyntax": false,
         "strict": true,
+        "noEmit": true,
         "noUnusedLocals": false,
         "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": true,
@@ -35,6 +38,8 @@
         "noImplicitReturns": false,
         "noImplicitThis": true,
         "noImplicitAny": true,
+        "resolvePackageJsonExports": true,
+        "resolvePackageJsonImports": true,
         "strictNullChecks": true,
         "strictFunctionTypes": true,
         "strictBindCallApply": true,
@@ -70,6 +75,9 @@
                 "./fonts/*"
             ],
             "~grpc/*": [
+                "./grpc/*"
+            ],
+            "~grpc-generated/*": [
                 "./grpc-generated/*"
             ],
             "~images/*": [
@@ -111,19 +119,16 @@
         }
     },
     "include": [
-        "hub/**/*.ts",
-        "hub/**/*.d.ts",
-        "hub/**/*.vue",
-        "hub/**/*.js",
+        "hub/**/*",
         "api/**/*.ts",
         "apollo/**/*.ts",
         "apollo/**/*.d.ts",
+        "grpc/**/*.ts",
         "grpc-generated/**/*.ts",
         "tools/**/*.ts",
         "schemas/**/*.ts",
         "scripts/**/*.ts",
         "vite.config.js",
-        "hub/ssr-server.js",
         "*.d.ts"
     ],
     "exclude": [

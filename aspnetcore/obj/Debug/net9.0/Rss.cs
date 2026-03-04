@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace SwuNews.gRPC {
+namespace SwuNews {
 
   /// <summary>Holder for reflection information generated from rss.proto</summary>
   public static partial class RssReflection {
@@ -36,9 +36,9 @@ namespace SwuNews.gRPC {
             "dBINCgV0aXRsZRgBIAEoCRIMCgRsaW5rGAIgASgJEhMKC2Rlc2NyaXB0aW9u",
             "GAMgASgJEjIKDnB1Ymxpc2hlZF9kYXRlGAQgASgLMhouZ29vZ2xlLnByb3Rv",
             "YnVmLlRpbWVzdGFtcBIjCghjYXRlZ29yeRgFIAEoCzIRLnJzc2ZlZWQuQ2F0",
-            "ZWdvcnkSHwoGYXV0aG9yGAYgASgLMg8ucnNzZmVlZC5BdXRob3IiJQoSR2V0",
-            "UlNTSXRlbXNSZXF1ZXN0Eg8KB2l0ZW1faWQYASABKAkiMgoSR2V0UlNTSXRl",
-            "bVJlc3BvbnNlEhwKBWl0ZW1zGAEgAygLMg0ucnNzZmVlZC5JdGVtItMBChRV",
+            "ZWdvcnkSHwoGYXV0aG9yGAYgASgLMg8ucnNzZmVlZC5BdXRob3IiJAoRR2V0",
+            "UlNTSXRlbVJlcXVlc3QSDwoHaXRlbV9pZBgBIAEoCSIzChNHZXRSU1NJdGVt",
+            "c1Jlc3BvbnNlEhwKBWl0ZW1zGAEgAygLMg0ucnNzZmVlZC5JdGVtItMBChRV",
             "cGRhdGVSU1NJdGVtUmVxdWVzdBIPCgdpdGVtX2lkGAEgASgJEg0KBXRpdGxl",
             "GAIgASgJEgwKBGxpbmsYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSMgoO",
             "cHVibGlzaGVkX2RhdGUYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0",
@@ -47,25 +47,25 @@ namespace SwuNews.gRPC {
             "UmVxdWVzdBIPCgdpdGVtX2lkGAEgASgJIigKFURlbGV0ZVJTU0l0ZW1SZXNw",
             "b25zZRIPCgdzdWNjZXNzGAEgASgIMtoCCg5SU1NJdGVtU2VydmljZRI3CgpB",
             "ZGRSU1NJdGVtEhoucnNzZmVlZC5BZGRSU1NJdGVtUmVxdWVzdBoNLnJzc2Zl",
-            "ZWQuSXRlbRJCCgtHZXRSU1NJdGVtcxIWLmdvb2dsZS5wcm90b2J1Zi5FbXB0",
-            "eRobLnJzc2ZlZWQuR2V0UlNTSXRlbVJlc3BvbnNlEjwKDkdldFJTU0l0ZW1C",
-            "eUlEEhsucnNzZmVlZC5HZXRSU1NJdGVtc1JlcXVlc3QaDS5yc3NmZWVkLkl0",
+            "ZWQuSXRlbRJDCgtHZXRSU1NJdGVtcxIWLmdvb2dsZS5wcm90b2J1Zi5FbXB0",
+            "eRocLnJzc2ZlZWQuR2V0UlNTSXRlbXNSZXNwb25zZRI7Cg5HZXRSU1NJdGVt",
+            "QnlJRBIaLnJzc2ZlZWQuR2V0UlNTSXRlbVJlcXVlc3QaDS5yc3NmZWVkLkl0",
             "ZW0SPQoNVXBkYXRlUlNTSXRlbRIdLnJzc2ZlZWQuVXBkYXRlUlNTSXRlbVJl",
             "cXVlc3QaDS5yc3NmZWVkLkl0ZW0STgoNRGVsZXRlUlNTSXRlbRIdLnJzc2Zl",
             "ZWQuRGVsZXRlUlNTSXRlbVJlcXVlc3QaHi5yc3NmZWVkLkRlbGV0ZVJTU0l0",
-            "ZW1SZXNwb25zZUIPqgIMU3d1TmV3cy5nUlBDYgZwcm90bzM="));
+            "ZW1SZXNwb25zZUIKqgIHU3d1TmV3c2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, global::Google.Protobuf.WellKnownTypes.EmptyReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.gRPC.Item), global::SwuNews.gRPC.Item.Parser, new[]{ "ItemId", "Title", "Link", "Description", "PublishedDate", "Category", "Author" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.gRPC.Category), global::SwuNews.gRPC.Category.Parser, new[]{ "Id", "Name" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.gRPC.Author), global::SwuNews.gRPC.Author.Parser, new[]{ "AuthorId", "Firstname", "Lastname" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.gRPC.AddRSSItemRequest), global::SwuNews.gRPC.AddRSSItemRequest.Parser, new[]{ "Title", "Link", "Description", "PublishedDate", "Category", "Author" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.gRPC.GetRSSItemsRequest), global::SwuNews.gRPC.GetRSSItemsRequest.Parser, new[]{ "ItemId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.gRPC.GetRSSItemResponse), global::SwuNews.gRPC.GetRSSItemResponse.Parser, new[]{ "Items" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.gRPC.UpdateRSSItemRequest), global::SwuNews.gRPC.UpdateRSSItemRequest.Parser, new[]{ "ItemId", "Title", "Link", "Description", "PublishedDate", "Category", "Author" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.gRPC.DeleteRSSItemRequest), global::SwuNews.gRPC.DeleteRSSItemRequest.Parser, new[]{ "ItemId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.gRPC.DeleteRSSItemResponse), global::SwuNews.gRPC.DeleteRSSItemResponse.Parser, new[]{ "Success" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.Item), global::SwuNews.Item.Parser, new[]{ "ItemId", "Title", "Link", "Description", "PublishedDate", "Category", "Author" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.Category), global::SwuNews.Category.Parser, new[]{ "Id", "Name" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.Author), global::SwuNews.Author.Parser, new[]{ "AuthorId", "Firstname", "Lastname" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.AddRSSItemRequest), global::SwuNews.AddRSSItemRequest.Parser, new[]{ "Title", "Link", "Description", "PublishedDate", "Category", "Author" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.GetRSSItemRequest), global::SwuNews.GetRSSItemRequest.Parser, new[]{ "ItemId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.GetRSSItemsResponse), global::SwuNews.GetRSSItemsResponse.Parser, new[]{ "Items" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.UpdateRSSItemRequest), global::SwuNews.UpdateRSSItemRequest.Parser, new[]{ "ItemId", "Title", "Link", "Description", "PublishedDate", "Category", "Author" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.DeleteRSSItemRequest), global::SwuNews.DeleteRSSItemRequest.Parser, new[]{ "ItemId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SwuNews.DeleteRSSItemResponse), global::SwuNews.DeleteRSSItemResponse.Parser, new[]{ "Success" }, null, null, null, null)
           }));
     }
     #endregion
@@ -87,7 +87,7 @@ namespace SwuNews.gRPC {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.MessageTypes[0]; }
+      get { return global::SwuNews.RssReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -185,10 +185,10 @@ namespace SwuNews.gRPC {
 
     /// <summary>Field number for the "category" field.</summary>
     public const int CategoryFieldNumber = 6;
-    private global::SwuNews.gRPC.Category category_;
+    private global::SwuNews.Category category_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::SwuNews.gRPC.Category Category {
+    public global::SwuNews.Category Category {
       get { return category_; }
       set {
         category_ = value;
@@ -197,10 +197,10 @@ namespace SwuNews.gRPC {
 
     /// <summary>Field number for the "author" field.</summary>
     public const int AuthorFieldNumber = 7;
-    private global::SwuNews.gRPC.Author author_;
+    private global::SwuNews.Author author_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::SwuNews.gRPC.Author Author {
+    public global::SwuNews.Author Author {
       get { return author_; }
       set {
         author_ = value;
@@ -390,13 +390,13 @@ namespace SwuNews.gRPC {
       }
       if (other.category_ != null) {
         if (category_ == null) {
-          Category = new global::SwuNews.gRPC.Category();
+          Category = new global::SwuNews.Category();
         }
         Category.MergeFrom(other.Category);
       }
       if (other.author_ != null) {
         if (author_ == null) {
-          Author = new global::SwuNews.gRPC.Author();
+          Author = new global::SwuNews.Author();
         }
         Author.MergeFrom(other.Author);
       }
@@ -444,14 +444,14 @@ namespace SwuNews.gRPC {
           }
           case 50: {
             if (category_ == null) {
-              Category = new global::SwuNews.gRPC.Category();
+              Category = new global::SwuNews.Category();
             }
             input.ReadMessage(Category);
             break;
           }
           case 58: {
             if (author_ == null) {
-              Author = new global::SwuNews.gRPC.Author();
+              Author = new global::SwuNews.Author();
             }
             input.ReadMessage(Author);
             break;
@@ -500,14 +500,14 @@ namespace SwuNews.gRPC {
           }
           case 50: {
             if (category_ == null) {
-              Category = new global::SwuNews.gRPC.Category();
+              Category = new global::SwuNews.Category();
             }
             input.ReadMessage(Category);
             break;
           }
           case 58: {
             if (author_ == null) {
-              Author = new global::SwuNews.gRPC.Author();
+              Author = new global::SwuNews.Author();
             }
             input.ReadMessage(Author);
             break;
@@ -534,7 +534,7 @@ namespace SwuNews.gRPC {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.MessageTypes[1]; }
+      get { return global::SwuNews.RssReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -769,7 +769,7 @@ namespace SwuNews.gRPC {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.MessageTypes[2]; }
+      get { return global::SwuNews.RssReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1041,7 +1041,7 @@ namespace SwuNews.gRPC {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.MessageTypes[3]; }
+      get { return global::SwuNews.RssReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1126,10 +1126,10 @@ namespace SwuNews.gRPC {
 
     /// <summary>Field number for the "category" field.</summary>
     public const int CategoryFieldNumber = 5;
-    private global::SwuNews.gRPC.Category category_;
+    private global::SwuNews.Category category_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::SwuNews.gRPC.Category Category {
+    public global::SwuNews.Category Category {
       get { return category_; }
       set {
         category_ = value;
@@ -1138,10 +1138,10 @@ namespace SwuNews.gRPC {
 
     /// <summary>Field number for the "author" field.</summary>
     public const int AuthorFieldNumber = 6;
-    private global::SwuNews.gRPC.Author author_;
+    private global::SwuNews.Author author_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::SwuNews.gRPC.Author Author {
+    public global::SwuNews.Author Author {
       get { return author_; }
       set {
         author_ = value;
@@ -1315,13 +1315,13 @@ namespace SwuNews.gRPC {
       }
       if (other.category_ != null) {
         if (category_ == null) {
-          Category = new global::SwuNews.gRPC.Category();
+          Category = new global::SwuNews.Category();
         }
         Category.MergeFrom(other.Category);
       }
       if (other.author_ != null) {
         if (author_ == null) {
-          Author = new global::SwuNews.gRPC.Author();
+          Author = new global::SwuNews.Author();
         }
         Author.MergeFrom(other.Author);
       }
@@ -1365,14 +1365,14 @@ namespace SwuNews.gRPC {
           }
           case 42: {
             if (category_ == null) {
-              Category = new global::SwuNews.gRPC.Category();
+              Category = new global::SwuNews.Category();
             }
             input.ReadMessage(Category);
             break;
           }
           case 50: {
             if (author_ == null) {
-              Author = new global::SwuNews.gRPC.Author();
+              Author = new global::SwuNews.Author();
             }
             input.ReadMessage(Author);
             break;
@@ -1417,14 +1417,14 @@ namespace SwuNews.gRPC {
           }
           case 42: {
             if (category_ == null) {
-              Category = new global::SwuNews.gRPC.Category();
+              Category = new global::SwuNews.Category();
             }
             input.ReadMessage(Category);
             break;
           }
           case 50: {
             if (author_ == null) {
-              Author = new global::SwuNews.gRPC.Author();
+              Author = new global::SwuNews.Author();
             }
             input.ReadMessage(Author);
             break;
@@ -1437,21 +1437,21 @@ namespace SwuNews.gRPC {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
-  public sealed partial class GetRSSItemsRequest : pb::IMessage<GetRSSItemsRequest>
+  public sealed partial class GetRSSItemRequest : pb::IMessage<GetRSSItemRequest>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<GetRSSItemsRequest> _parser = new pb::MessageParser<GetRSSItemsRequest>(() => new GetRSSItemsRequest());
+    private static readonly pb::MessageParser<GetRSSItemRequest> _parser = new pb::MessageParser<GetRSSItemRequest>(() => new GetRSSItemRequest());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<GetRSSItemsRequest> Parser { get { return _parser; } }
+    public static pb::MessageParser<GetRSSItemRequest> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.MessageTypes[4]; }
+      get { return global::SwuNews.RssReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1462,7 +1462,7 @@ namespace SwuNews.gRPC {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public GetRSSItemsRequest() {
+    public GetRSSItemRequest() {
       OnConstruction();
     }
 
@@ -1470,15 +1470,15 @@ namespace SwuNews.gRPC {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public GetRSSItemsRequest(GetRSSItemsRequest other) : this() {
+    public GetRSSItemRequest(GetRSSItemRequest other) : this() {
       itemId_ = other.itemId_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public GetRSSItemsRequest Clone() {
-      return new GetRSSItemsRequest(this);
+    public GetRSSItemRequest Clone() {
+      return new GetRSSItemRequest(this);
     }
 
     /// <summary>Field number for the "item_id" field.</summary>
@@ -1496,12 +1496,12 @@ namespace SwuNews.gRPC {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as GetRSSItemsRequest);
+      return Equals(other as GetRSSItemRequest);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(GetRSSItemsRequest other) {
+    public bool Equals(GetRSSItemRequest other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -1574,7 +1574,7 @@ namespace SwuNews.gRPC {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(GetRSSItemsRequest other) {
+    public void MergeFrom(GetRSSItemRequest other) {
       if (other == null) {
         return;
       }
@@ -1635,21 +1635,21 @@ namespace SwuNews.gRPC {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
-  public sealed partial class GetRSSItemResponse : pb::IMessage<GetRSSItemResponse>
+  public sealed partial class GetRSSItemsResponse : pb::IMessage<GetRSSItemsResponse>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<GetRSSItemResponse> _parser = new pb::MessageParser<GetRSSItemResponse>(() => new GetRSSItemResponse());
+    private static readonly pb::MessageParser<GetRSSItemsResponse> _parser = new pb::MessageParser<GetRSSItemsResponse>(() => new GetRSSItemsResponse());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<GetRSSItemResponse> Parser { get { return _parser; } }
+    public static pb::MessageParser<GetRSSItemsResponse> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.MessageTypes[5]; }
+      get { return global::SwuNews.RssReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1660,7 +1660,7 @@ namespace SwuNews.gRPC {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public GetRSSItemResponse() {
+    public GetRSSItemsResponse() {
       OnConstruction();
     }
 
@@ -1668,37 +1668,37 @@ namespace SwuNews.gRPC {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public GetRSSItemResponse(GetRSSItemResponse other) : this() {
+    public GetRSSItemsResponse(GetRSSItemsResponse other) : this() {
       items_ = other.items_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public GetRSSItemResponse Clone() {
-      return new GetRSSItemResponse(this);
+    public GetRSSItemsResponse Clone() {
+      return new GetRSSItemsResponse(this);
     }
 
     /// <summary>Field number for the "items" field.</summary>
     public const int ItemsFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::SwuNews.gRPC.Item> _repeated_items_codec
-        = pb::FieldCodec.ForMessage(10, global::SwuNews.gRPC.Item.Parser);
-    private readonly pbc::RepeatedField<global::SwuNews.gRPC.Item> items_ = new pbc::RepeatedField<global::SwuNews.gRPC.Item>();
+    private static readonly pb::FieldCodec<global::SwuNews.Item> _repeated_items_codec
+        = pb::FieldCodec.ForMessage(10, global::SwuNews.Item.Parser);
+    private readonly pbc::RepeatedField<global::SwuNews.Item> items_ = new pbc::RepeatedField<global::SwuNews.Item>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::SwuNews.gRPC.Item> Items {
+    public pbc::RepeatedField<global::SwuNews.Item> Items {
       get { return items_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as GetRSSItemResponse);
+      return Equals(other as GetRSSItemsResponse);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(GetRSSItemResponse other) {
+    public bool Equals(GetRSSItemsResponse other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
@@ -1763,7 +1763,7 @@ namespace SwuNews.gRPC {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(GetRSSItemResponse other) {
+    public void MergeFrom(GetRSSItemsResponse other) {
       if (other == null) {
         return;
       }
@@ -1836,7 +1836,7 @@ namespace SwuNews.gRPC {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.MessageTypes[6]; }
+      get { return global::SwuNews.RssReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1934,10 +1934,10 @@ namespace SwuNews.gRPC {
 
     /// <summary>Field number for the "category" field.</summary>
     public const int CategoryFieldNumber = 6;
-    private global::SwuNews.gRPC.Category category_;
+    private global::SwuNews.Category category_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::SwuNews.gRPC.Category Category {
+    public global::SwuNews.Category Category {
       get { return category_; }
       set {
         category_ = value;
@@ -1946,10 +1946,10 @@ namespace SwuNews.gRPC {
 
     /// <summary>Field number for the "author" field.</summary>
     public const int AuthorFieldNumber = 7;
-    private global::SwuNews.gRPC.Author author_;
+    private global::SwuNews.Author author_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::SwuNews.gRPC.Author Author {
+    public global::SwuNews.Author Author {
       get { return author_; }
       set {
         author_ = value;
@@ -2139,13 +2139,13 @@ namespace SwuNews.gRPC {
       }
       if (other.category_ != null) {
         if (category_ == null) {
-          Category = new global::SwuNews.gRPC.Category();
+          Category = new global::SwuNews.Category();
         }
         Category.MergeFrom(other.Category);
       }
       if (other.author_ != null) {
         if (author_ == null) {
-          Author = new global::SwuNews.gRPC.Author();
+          Author = new global::SwuNews.Author();
         }
         Author.MergeFrom(other.Author);
       }
@@ -2193,14 +2193,14 @@ namespace SwuNews.gRPC {
           }
           case 50: {
             if (category_ == null) {
-              Category = new global::SwuNews.gRPC.Category();
+              Category = new global::SwuNews.Category();
             }
             input.ReadMessage(Category);
             break;
           }
           case 58: {
             if (author_ == null) {
-              Author = new global::SwuNews.gRPC.Author();
+              Author = new global::SwuNews.Author();
             }
             input.ReadMessage(Author);
             break;
@@ -2249,14 +2249,14 @@ namespace SwuNews.gRPC {
           }
           case 50: {
             if (category_ == null) {
-              Category = new global::SwuNews.gRPC.Category();
+              Category = new global::SwuNews.Category();
             }
             input.ReadMessage(Category);
             break;
           }
           case 58: {
             if (author_ == null) {
-              Author = new global::SwuNews.gRPC.Author();
+              Author = new global::SwuNews.Author();
             }
             input.ReadMessage(Author);
             break;
@@ -2283,7 +2283,7 @@ namespace SwuNews.gRPC {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.MessageTypes[7]; }
+      get { return global::SwuNews.RssReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2481,7 +2481,7 @@ namespace SwuNews.gRPC {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SwuNews.gRPC.RssReflection.Descriptor.MessageTypes[8]; }
+      get { return global::SwuNews.RssReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

@@ -1,20 +1,18 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#                        SWU RSS News - Makefile
+#              Cross-platform: Linux, macOS, Windows (WSL/Git Bash)
+# ═══════════════════════════════════════════════════════════════════════════════
+
 .DEFAULT_GOAL := help
 
 # ╔═══════════════════════════════════════════════════════════╗
 # ║                      CONFIGURATION                        ║
 # ╚═══════════════════════════════════════════════════════════╝
 
-# Colors
-GREEN  := \033[0;32m
-YELLOW := \033[1;33m
-RED    := \033[0;31m
-BLUE   := \033[0;34m
-CYAN   := \033[0;36m
-NC     := \033[0m
-
 # Project Settings
 PROJECT_NAME := swu-rssnews
 COMPOSE_PROFILES := --profile setup --profile migration
+DATABASE_NAME := RSSActivityWeb
 
 # Service Names (ตรงกับ docker-compose.yml)
 SERVICE_ASPNETCORE := aspdotnetweb
@@ -22,44 +20,75 @@ SERVICE_DB := mssql
 SERVICE_FRONTEND := frontend
 SERVICE_NGINX := web-server
 
-# Endpoints (ใช้ service names จาก Docker network)
-GRAPHQL_ENDPOINT := http://$(SERVICE_ASPNETCORE):5000/graphql
-HEALTH_ENDPOINT := http://$(SERVICE_ASPNETCORE):5000/health
-
-# Timeout (seconds)
+# Timeout Settings (seconds)
 TIMEOUT_DB := 60
 TIMEOUT_GRAPHQL := 90
 TIMEOUT_HEALTH := 180
 
-# Directories
+# Directory Structure
 DIR_DATABASE := ./database
 DIR_FRONTEND := ./vite-ui
-DIR_APOLLO := $(DIR_FRONTEND)/apollo
-DIR_SCRIPTS := $(DIR_FRONTEND)/scripts
+DIR_ASPNETCORE := ./aspnetcore
+DIR_SCRIPTS := ./scripts
 DIR_SECRETS := ./secrets
+DIR_APOLLO := $(DIR_FRONTEND)/apollo
 DIR_MIGRATIONS := ./aspnetcore/Migrations
+DIR_BACKUPS := ./backups
 
-# Files
+# Important Files
 FILE_PASSWORD := $(DIR_SECRETS)/db_password.txt
-FILE_ENTRYPOINT := $(DIR_SCRIPTS)/docker-entrypoint.sh
 FILE_SCHEMA := $(DIR_APOLLO)/schema.graphql
 
-APOLLO_BIN = npx -p @apollo/client apollo
+# Migration Scripts
+SCRIPT_ADD_FIRST := $(DIR_ASPNETCORE)/add-first-migration.sh
+SCRIPT_ADD_MIGRATION := $(DIR_ASPNETCORE)/add-migration.sh
+SCRIPT_QUICK_FIX := $(DIR_ASPNETCORE)/quick-fix.sh
 
-GRAPHQL_SCRIPTS := vite-ui/scripts/graphql/graphql-utils.sh
-GRAPHQL_LOGIC := bash -c '. $(GRAPHQL_SCRIPTS); <your-func>'
-GRAPHQL_SCHEMA_FILE := $(DIR_APOLLO)/schema.graphql
-GRAPHQL_GENERATED_DIR := $(DIR_APOLLO)/generated
-GRAPHQL_IS_PLACEHOLDER := $(shell grep -q "_placeholder" $(GRAPHQL_SCHEMA_FILE) && echo true || echo false)
-GRAPHQL_IS_REAL := $(if $(GRAPHQL_IS_PLACEHOLDER),false,true)
+# Terminal Colors
+GREEN  := \033[0;32m
+YELLOW := \033[1;33m
+RED    := \033[0;31m
+BLUE   := \033[0;34m
+CYAN   := \033[0;36m
+GRAY   := \033[0;90m
+NC     := \033[0m
 
-# OS Detection
-UNAME_S := $(shell uname -s)
+# OS Detection and Commands
+UNAME_S := $(shell uname -s 2>/dev/null || echo Windows)
 ifeq ($(UNAME_S),Darwin)
     SED_INPLACE := sed -i ''
+    OPEN_CMD := open
+else ifeq ($(UNAME_S),Linux)
+    SED_INPLACE := sed -i
+    OPEN_CMD := xdg-open
 else
     SED_INPLACE := sed -i
+    OPEN_CMD := start
 endif
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                   PROJECT INITIALIZATION                  ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: init init-project project-setup
+
+init: init-project
+init-project:
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(BLUE)              Project Initialization                       $(NC)"
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@if [ ! -f "./init-project.sh" ]; then \
+        echo "$(RED)❌ init-project.sh not found$(NC)"; \
+        exit 1; \
+    fi
+	@chmod +x ./init-project.sh
+	@if command -v dos2unix >/dev/null 2>&1; then \
+        dos2unix ./init-project.sh 2>/dev/null || true; \
+    fi
+	@bash ./init-project.sh
+
+project-setup: init-project
+
 
 # ╔═══════════════════════════════════════════════════════════╗
 # ║                         HELP                              ║
@@ -69,1095 +98,1296 @@ endif
 help:
 	@echo ""
 	@echo "$(BLUE)╔═══════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(BLUE)║         SWU RSS News Docker Management Commands           ║$(NC)"
+	@echo "$(BLUE)║       SWU RSS News - Docker Management Commands           ║$(NC)"
 	@echo "$(BLUE)╚═══════════════════════════════════════════════════════════╝$(NC)"
 	@echo ""
 	@echo "$(CYAN)📦 QUICK START$(NC)"
+	@echo "  $(GREEN)make init$(NC)                - เริ่มต้นโปรเจ็กต์"
 	@echo "  $(GREEN)make first-run$(NC)           - ติดตั้งและรันโปรเจ็กต์ครั้งแรก"
-	@echo "  $(GREEN)make dev$(NC)                 - รัน development mode"
-	@echo "  $(GREEN)make status$(NC)              - ดูสถานะ services"
-	@echo ""
-	@echo "$(CYAN)🔧 INSTALLATION & SETUP$(NC)"
-	@echo "  $(GREEN)make create-password$(NC)     - สร้างรหัสผ่าน database"
-	@echo "  $(GREEN)make install$(NC)             - ติดตั้ง database & migrations"
-	@echo "  $(GREEN)make build$(NC)               - Build Docker images"
-	@echo ""
-	@echo "$(CYAN)🚀 RUNNING$(NC)"
 	@echo "  $(GREEN)make dev$(NC)                 - รัน development mode"
 	@echo "  $(GREEN)make prod$(NC)                - รัน production mode"
 	@echo "  $(GREEN)make stop$(NC)                - หยุด services"
 	@echo "  $(GREEN)make restart$(NC)             - Restart services"
 	@echo ""
+	@echo "$(CYAN)🔧 CONFIGURATION$(NC)"
+	@echo "  $(GREEN)make check-app-url$(NC)       - ตรวจสอบ APP_URL"
+	@echo "  $(GREEN)make assign-app-url$(NC)      - ตั้งค่า APP_URL"
+	@echo "  $(GREEN)make show-env$(NC)            - แสดง environment config"
+	@echo "  $(GREEN)make test-app-url$(NC)        - ทดสอบ APP_URL"
+	@echo ""
+	@echo "$(CYAN)🐳 DOCKER$(NC)"
+	@echo "  $(GREEN)make build$(NC)               - Build all containers"
+	@echo "  $(GREEN)make build-no-cache$(NC)      - Build without cache"
+	@echo "  $(GREEN)make up$(NC)                  - Start services"
+	@echo "  $(GREEN)make down$(NC)                - Stop services"
+	@echo "  $(GREEN)make logs$(NC)                - View all logs"
+	@echo "  $(GREEN)make status$(NC)              - Show container status"
+	@echo ""
 	@echo "$(CYAN)🎨 FRONTEND$(NC)"
-	@echo "  $(GREEN)make frontend-dev$(NC)        - รัน Vite dev server"
+	@echo "  $(GREEN)make frontend-build$(NC)      - Build frontend container"
 	@echo "  $(GREEN)make frontend-logs$(NC)       - ดู frontend logs"
 	@echo "  $(GREEN)make frontend-shell$(NC)      - เข้า frontend shell"
+	@echo "  $(GREEN)make frontend-restart$(NC)    - Restart frontend"
 	@echo ""
 	@echo "$(CYAN)🔮 GRAPHQL$(NC)"
-	@echo "  $(GREEN)make graphql-generate$(NC)    - สร้าง GraphQL client (แนะนำ)"
+	@echo "  $(GREEN)make graphql-setup$(NC)       - Complete GraphQL setup"
+	@echo "  $(GREEN)make graphql-generate$(NC)    - สร้าง GraphQL client"
 	@echo "  $(GREEN)make graphql-test$(NC)        - ทดสอบ GraphQL endpoint"
-	@echo "  $(GREEN)make graphql-check$(NC)       - ตรวจสอบ schema files"
-	@echo "  $(GREEN)make graphql-fix$(NC)         - แก้ไขปัญหา GraphQL"
-	@echo "  $(GREEN)make graphql-watch$(NC)       - Watch mode สำหรับ codegen"
-	@echo "  $(GREEN)make graphql-validate$(NC)    - Validate setup"
-	@echo "  $(GREEN)make graphql-reset$(NC)       - Reset everything (⚠️  destructive)"
-	@echo "  $(GREEN)make graphql-info$(NC)        - Show configuration info"
+	@echo "  $(GREEN)make graphql-check$(NC)       - Check schema status"
+	@echo "  $(GREEN)make graphql-reset$(NC)       - Reset GraphQL files"
 	@echo ""
 	@echo "$(CYAN)🐛 GRAPHQL DEBUG$(NC)"
 	@echo "  $(GREEN)make graphql-status$(NC)      - สรุปสถานะแบบเร็ว"
-	@echo "  $(GREEN)make graphql-clean$(NC)       - ล้าง generated files เฉยๆ"
+	@echo "  $(GREEN)make graphql-clean$(NC)       - ล้าง generated files"
 	@echo "  $(GREEN)make graphql-health$(NC)      - ทดสอบ health endpoint"
-	@echo "$(CYAN)🗄️ DATABASE$(NC)"
-	@echo "  $(GREEN)make db-test$(NC)             - ทดสอบการเชื่อมต่อ"
-	@echo "  $(GREEN)make db-shell$(NC)            - เข้า SQL Server shell"
-	@echo "  $(GREEN)make db-migration NAME=xxx$(NC) - สร้าง migration ใหม่"
+	@echo ""
+	@echo "$(CYAN)🗄️  DATABASE$(NC)"
+	@echo "  $(GREEN)make db-setup$(NC)            - ติดตั้งฐานข้อมูล"
+	@echo "  $(GREEN)make db-shell$(NC)            - Open SQL shell"
+	@echo "  $(GREEN)make db-test$(NC)             - ทดสอบการเชื่อมต่อฐานข้อมูล"
+	@echo "  $(GREEN)make db-migrate NAME=x$(NC)   - Create migration"
+	@echo "  $(GREEN)make db-backup$(NC)           - Backup database"
+	@echo ""
+	@echo "$(CYAN)💾 VOLUMES$(NC)"
+	@echo "  $(GREEN)make volumes-init$(NC)        - Initialize SQL volumes"
+	@echo "  $(GREEN)make volumes-check$(NC)       - Check permissions"
+	@echo "  $(GREEN)make volumes-fix$(NC)         - Fix permissions"
+	@echo "  $(GREEN)make volumes-list$(NC)        - List project volumes"
+	@echo ""
+	@echo "$(CYAN)🏥 HEALTH & STATUS$(NC)"
+	@echo "  $(GREEN)make health$(NC)              - Quick health check"
+	@echo "  $(GREEN)make health-full$(NC)         - Detailed health report"
+	@echo "  $(GREEN)make urls$(NC)                - Show service URLs"
+	@echo "  $(GREEN)make quick$(NC)               - Quick system check"
 	@echo ""
 	@echo "$(CYAN)🧹 MAINTENANCE$(NC)"
 	@echo "  $(GREEN)make clean$(NC)               - ลบ containers"
-	@echo "  $(GREEN)make rebuild$(NC)             - Rebuild containers"
-	@echo "  $(GREEN)make reset$(NC)               - ลบข้อมูลทั้งหมด (ระวัง!)"
+	@echo "  $(GREEN)make rebuild$(NC)             - Rebuild everything"
+	@echo "  $(GREEN)make reset$(NC)               - Full reset (⚠️ destructive)"
+	@echo "  $(GREEN)make fix-line-endings$(NC)    - Fix line endings"
+	@echo ""
+	@echo "$(CYAN)🪟 WINDOWS$(NC)"
+	@echo "  $(GREEN)make windows-quick-start$(NC) - Windows quick start"
+	@echo "  $(GREEN)make windows-fix-line-endings$(NC) - Fix line endings (PowerShell)"
+	@echo ""
+	@echo "$(GRAY)For more commands: make help-all$(NC)"
+	@echo ""
+
+.PHONY: help-all
+help-all: help
+	@echo "$(CYAN)📋 ALL COMMANDS$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Installation:$(NC)"
+	@echo "   make create-password          - Create database password"
+	@echo "   make setup-scripts            - Setup script permissions"
+	@echo "   make install                  - Install database"
+	@echo ""
+	@echo "$(YELLOW)GraphQL Advanced:$(NC)"
+	@echo "   make graphql-download         - Download schema"
+	@echo "   make graphql-watch            - Watch mode for codegen"
+	@echo "   make graphql-validate         - Validate schema"
+	@echo "   make graphql-info             - Show GraphQL config"
+	@echo ""
+	@echo "$(YELLOW)Database Advanced:$(NC)"
+	@echo "   make db-debug                 - Debug SQL Server"
+	@echo "   make db-logs                  - View SQL logs"
+	@echo "   make db-size                  - Show database size"
+	@echo "   make db-restore               - Restore from backup"
+	@echo ""
+	@echo "$(YELLOW)EF Core Migrations Advanced:$(NC)"
+	@echo "   make migration-rollback       - Rollback last migration"
+	@echo "   make migration-remove         - Remove last migration"
+	@echo "   make migration-script         - Generate SQL script"
+	@echo "   make migration-clean          - Clean migration folder"
+	@echo ""
+	@echo "$(YELLOW)Development:$(NC)"
+	@echo "   make npm-install              - Install npm packages"
+	@echo "   make npm-update               - Update npm packages"
+	@echo "   make type-check               - TypeScript check"
+	@echo "   make lint                     - Run linter"
+	@echo "   make test                     - Run tests"
+	@echo ""
+	@echo "$(YELLOW)SSH Management:$(NC)"
+	@echo "   make ssh-start                - Start SSH server"
+	@echo "   make ssh-stop                 - Stop SSH server"
+	@echo "   make ssh-status               - Show SSH status"
+	@echo "   make ssh-help                 - SSH help"
 	@echo ""
 
 # ╔═══════════════════════════════════════════════════════════╗
-# ║                    HELPER FUNCTIONS                       ║
+# ║                EF CORE MIGRATIONS SECTION                 ║
 # ╚═══════════════════════════════════════════════════════════╝
 
-# Cross-platform sed with backup
-define sed_replace
-	@if [ "$(UNAME_S)" = "Darwin" ]; then \
-        sed -i '' '$(1)' $(2); \
+.PHONY: migration-first migration-add migration-apply migration-fix
+.PHONY: migration-status migration-list migration-rollback migration-remove
+.PHONY: migration-script migration-clean migration-help migration-begin
+
+# ════════════════════════════════════════════════════════════
+# 🆕 ตรวจสอบว่าเป็น migration ครั้งแรกหรือไม่
+# ════════════════════════════════════════════════════════════
+define is_first_migration
+$(shell \
+    if [ ! -d "$(DIR_MIGRATIONS)" ]; then \
+        echo "true"; \
+    elif [ -z "$$(find $(DIR_MIGRATIONS) -name '*.cs' 2>/dev/null)" ]; then \
+        echo "true"; \
     else \
-        sed -i '$(1)' $(2); \
-    fi
+        echo "false"; \
+    fi \
+)
 endef
 
-# Wait for service with timeout
-define wait_for_service
-	@echo "$(YELLOW)⏳ Waiting for $(1)...$(NC)"; \
-    elapsed=0; \
-    while [ $$elapsed -lt $(2) ]; do \
-        if $(3); then \
-            echo "$(GREEN)✅ $(1) is ready ($$elapsed/$(2)s)$(NC)"; \
-            exit 0; \
+# ════════════════════════════════════════════════════════════
+# 🆕 สร้างไดเรกทอรี Migrations (เฉพาะครั้งแรก)
+# ════════════════════════════════════════════════════════════
+migration-begin:
+	@echo "$(CYAN)📁 Checking Migrations directory...$(NC)"
+	@if [ "$(call is_first_migration)" = "true" ]; then \
+        echo "$(YELLOW)🆕 First migration detected$(NC)"; \
+        if [ ! -d "$(DIR_MIGRATIONS)" ]; then \
+            mkdir -p $(DIR_MIGRATIONS); \
+            echo "$(GREEN)✅ Created: $(DIR_MIGRATIONS)$(NC)"; \
+        else \
+            echo "$(GREEN)✅ Directory exists (empty): $(DIR_MIGRATIONS)$(NC)"; \
         fi; \
-        printf "\r  Waiting... $$elapsed/$(2)s"; \
-        sleep 5; \
-        elapsed=$$((elapsed + 5)); \
-    done; \
-    echo "$(RED)❌ Timeout waiting for $(1)$(NC)"; \
-    exit 1
-endef
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                    INSTALLATION                           ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: create-password check-password
-create-password:
-	@echo "$(BLUE)Creating Database Password$(NC)"
-	@mkdir -p $(DIR_SECRETS) && chmod 700 $(DIR_SECRETS)
-	@if [ -f "$(FILE_PASSWORD)" ]; then \
-        echo "$(YELLOW)⚠️  Password exists!$(NC)"; \
-        read -p "Override? (y/N): " confirm; \
-        [ "$$confirm" = "y" ] || exit 1; \
+    else \
+        echo "$(GREEN)✅ Migrations already exist$(NC)"; \
+        ls -1 $(DIR_MIGRATIONS)/*.cs 2>/dev/null | wc -l | xargs -I {} echo "   Found {} migration file(s)"; \
     fi
-	@echo "$(YELLOW)Requirements: 8+ chars, 3 of: upper/lower/digit/symbol$(NC)"
-	@while true; do \
-        read -s -p "Password: " pass1; echo ""; \
-        [ -n "$$pass1" ] || { echo "$(RED)Empty!$(NC)"; continue; }; \
-        [ $$(echo "$$pass1" | wc -c) -ge 9 ] || { echo "$(RED)Too short!$(NC)"; continue; }; \
-        read -s -p "Confirm: " pass2; echo ""; \
-        [ "$$pass1" = "$$pass2" ] || { echo "$(RED)Mismatch!$(NC)"; continue; }; \
-        echo -n "$$pass1" > $(FILE_PASSWORD) && chmod 600 $(FILE_PASSWORD); \
-        break; \
-    done
-	@echo "$(GREEN)✅ Password saved$(NC)"
 
-check-password:
-	@if [ ! -f "$(FILE_PASSWORD)" ]; then \
-        echo "$(RED)❌ Password file not found$(NC)"; \
+# สร้าง initial migration (ใช้ครั้งแรก)
+migration-first: migration-begin
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(BLUE)            Creating Initial EF Core Migration             $(NC)"
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Step 1: Building migration image...$(NC)"
+	@docker compose build --target migration migration-db
+	@echo ""
+	@echo "$(YELLOW)Step 2: Creating migration...$(NC)"
+	@docker compose $(COMPOSE_PROFILES) up migration-db
+	@echo "$(GREEN)✅ Initial migration complete$(NC)"
+
+# สร้าง migration ใหม่ (ใช้งานปกติ)
+migration-add: migration-begin
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(BLUE)               Creating New EF Core Migration              $(NC)"
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@MIGRATION_NAME_FINAL=""; \
+	if [ "$(call is_first_migration)" = "true" ]; then \
+	    MIGRATION_NAME_FINAL="InitialCreate"; \
+	elif [ -z "$(NAME)" ]; then \
+	    echo "$(RED)❌ Please provide migration name$(NC)"; \
+	    exit 1; \
+	else \
+	    MIGRATION_NAME_FINAL="$(NAME)"; \
+	fi; \
+	echo "$(YELLOW)📦 Creating migration: $$MIGRATION_NAME_FINAL$(NC)"; \
+	echo ""; \
+	echo "$(YELLOW)Building migration image...$(NC)"; \
+	docker compose build migration-db; \
+	if [ -f .env ]; then \
+	    $(SED_INPLACE) 's/^ADD_NEW_MIGRATION=.*/ADD_NEW_MIGRATION=true/' .env || \
+	    echo "ADD_NEW_MIGRATION=true" >> .env; \
+	    $(SED_INPLACE) "s/^MIGRATION_NAME=.*/MIGRATION_NAME=$$MIGRATION_NAME_FINAL/" .env || \
+	    echo "MIGRATION_NAME=$$MIGRATION_NAME_FINAL" >> .env; \
+	fi; \
+	docker compose --profile migration up migration-db; \
+	echo ""; \
+	echo "$(GREEN)✅ Migration '$$MIGRATION_NAME_FINAL' created and applied$(NC)"
+	@$(MAKE) migration-list
+	@if [ -f .env ]; then \
+	    $(SED_INPLACE) 's/^ADD_NEW_MIGRATION=true/ADD_NEW_MIGRATION=false/' .env; \
+	    echo "$(GRAY)ℹ️  Reset ADD_NEW_MIGRATION=false$(NC)"; \
+	fi
+
+# Apply migrations ที่มีอยู่แล้ว
+migration-apply:
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(BLUE)              Applying Database Migrations                 $(NC)"
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@if [ "$(call is_first_migration)" = "true" ]; then \
+        echo "$(RED)❌ No migrations found to apply$(NC)"; \
+        echo ""; \
+        echo "$(YELLOW)💡 Create migrations first:$(NC)"; \
+        echo "   $(GREEN)make migration-first$(NC)  - For initial setup"; \
+        echo "   $(GREEN)make migration-add NAME=xxx$(NC)  - For new migration"; \
         exit 1; \
     fi
+	@if [ -f .env ]; then \
+		echo "ADD_NEW_MIGRATION=false" > .env.tmp; \
+		cat .env | grep -v "^ADD_NEW_MIGRATION=" | grep -v "^MIGRATION_NAME=" >> .env.tmp; \
+		mv .env.tmp .env; \
+	fi
+	@docker exec $(SERVICE_ASPNETCORE) /usr/local/bin/add-migration.sh
+	@echo "$(GREEN)✅ Migrations applied successfully$(NC)"
 
-.PHONY: setup-scripts
-setup-scripts:
-	@echo "$(BLUE)Setting Up Scripts$(NC)"
-	@chmod +x $(DIR_DATABASE)/*.sh 2>/dev/null || true
-	@chmod +x $(DIR_SCRIPTS)/*.sh 2>/dev/null || true
-	@chmod +x ./aspnetcore/add-migration.sh || true
-	@echo "$(GREEN)✅ Scripts configured$(NC)"
+# Quick fix สำหรับปัญหา migration
+migration-fix: migration-begin
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(BLUE)           Quick Fix - EF Core Migration Problem          $(NC)"
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@if [ ! -f "$(SCRIPT_QUICK_FIX)" ]; then \
+		echo "$(RED)❌ Script not found: $(SCRIPT_QUICK_FIX)$(NC)"; \
+		exit 1; \
+	fi
+	@chmod +x $(SCRIPT_QUICK_FIX)
+	@bash $(SCRIPT_QUICK_FIX)
 
-.PHONY: fix-line-endings
-fix-line-endings:
-	@echo "$(BLUE)Fixing Line Endings$(NC)"
-	@for file in $(DIR_SCRIPTS)/*.sh $(DIR_DATABASE)/*.sh ./aspnetcore/add-migration.sh ./vite-ui/scripts/*.sh ./vite-ui/scripts/docker-entrypoint.sh; do \
-        if [ -f "$$file" ]; then \
-            if command -v dos2unix >/dev/null 2>&1; then \
-                dos2unix "$$file" 2>/dev/null; \
-            else \
-                $(SED_INPLACE) 's/\r$$//' "$$file"; \
-            fi; \
-            echo "  ✅ $$(basename $$file)"; \
+# ตรวจสอบสถานะ migrations
+migration-status:
+	@echo "$(CYAN)🔍 Checking Migration Status$(NC)"
+	@echo "════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "$(YELLOW)📁 Migration Directory:$(NC)"
+	@if [ "$(call is_first_migration)" = "true" ]; then \
+        echo "  $(YELLOW)🆕 No migrations yet (first-time setup needed)$(NC)"; \
+        if [ ! -d "$(DIR_MIGRATIONS)" ]; then \
+            echo "  $(GRAY)Directory does not exist$(NC)"; \
+        else \
+            echo "  $(GRAY)Directory exists but empty$(NC)"; \
         fi; \
-    done
+    else \
+        echo "  $(GREEN)✅ Migrations exist$(NC)"; \
+        ls -lh $(DIR_MIGRATIONS)/*.cs 2>/dev/null | wc -l | xargs -I {} echo "  Found {} migration file(s)"; \
+    fi
+	@echo ""
+	@echo "$(YELLOW)🗄️  Database Migrations:$(NC)"
+	@docker exec $(SERVICE_ASPNETCORE) bash -c "cd /app/aspnetcore && \
+        dotnet ef migrations list --context RSSNewsDbContext 2>/dev/null" || \
+        echo "  $(YELLOW)⚠️  Cannot retrieve database migrations$(NC)"
+	@echo ""
+	@echo "$(YELLOW)📊 Current Environment:$(NC)"
+	@if [ -f .env ]; then \
+        grep -E "^(ADD_NEW_MIGRATION|MIGRATION_NAME)=" .env || echo "  No migration variables set"; \
+    fi
+	@echo ""
+	@echo "$(YELLOW)💡 Quick Actions:$(NC)"
+	@if [ "$(call is_first_migration)" = "true" ]; then \
+        echo "  $(GREEN)make migration-first$(NC)  - Create initial migration"; \
+    else \
+        echo "  $(GREEN)make migration-add NAME=xxx$(NC)  - Add new migration"; \
+        echo "  $(GREEN)make migration-apply$(NC)  - Apply pending migrations"; \
+    fi
+
+# แสดงรายการ migration files
+migration-list:
+	@echo "$(CYAN)📄 Migration Files$(NC)"
+	@echo "════════════════════════════════════════════════════════════"
+	@if [ "$(call is_first_migration)" = "true" ]; then \
+        echo "  $(YELLOW)🆕 No migration files yet$(NC)"; \
+        echo ""; \
+        echo "  $(CYAN)💡 Create your first migration:$(NC)"; \
+        echo "     $(GREEN)make migration-first$(NC)"; \
+    else \
+        echo ""; \
+        ls -lh $(DIR_MIGRATIONS)/*.cs 2>/dev/null | \
+        awk '{printf "  📄 %s  %s  %s\n", $$6" "$$7, $$5, $$9}' || \
+        echo "  $(YELLOW)No migration files found$(NC)"; \
+        echo ""; \
+        echo "  $(GRAY)Total: $$(ls -1 $(DIR_MIGRATIONS)/*.cs 2>/dev/null | wc -l) file(s)$(NC)"; \
+    fi
+
+# Rollback migration (ย้อนกลับ)
+migration-rollback:
+	@if [ "$(call is_first_migration)" = "true" ]; then \
+        echo "$(RED)❌ No migrations to rollback$(NC)"; \
+        exit 1; \
+    fi
+	@echo "$(YELLOW)⚠️  Rolling back to previous migration...$(NC)"
+	@docker exec $(SERVICE_ASPNETCORE) bash -c "cd /app/aspnetcore && \
+        dotnet ef database update 0 --context RSSNewsDbContext"
+	@echo "$(GREEN)✅ Database rolled back$(NC)"
+
+# ลบ migration ล่าสุด
+migration-remove:
+	@if [ "$(call is_first_migration)" = "true" ]; then \
+        echo "$(RED)❌ No migrations to remove$(NC)"; \
+        exit 1; \
+    fi
+	@echo "$(YELLOW)🗑️  Removing last migration...$(NC)"
+	@docker exec $(SERVICE_ASPNETCORE) bash -c "cd /app/aspnetcore && \
+        dotnet ef migrations remove --context RSSNewsDbContext --force"
+	@echo "$(GREEN)✅ Last migration removed$(NC)"
+	@$(MAKE) migration-list
+
+# สร้าง SQL script จาก migrations
+migration-script:
+	@if [ "$(call is_first_migration)" = "true" ]; then \
+        echo "$(RED)❌ No migrations to generate script from$(NC)"; \
+        exit 1; \
+    fi
+	@echo "$(CYAN)📝 Generating SQL Migration Script$(NC)"
+	@docker exec $(SERVICE_ASPNETCORE) bash -c "cd /app/aspnetcore && \
+        dotnet ef migrations script --context RSSNewsDbContext --output /tmp/migration.sql"
+	@docker cp $(SERVICE_ASPNETCORE):/tmp/migration.sql ./migration.sql
+	@echo "$(GREEN)✅ SQL script saved to: migration.sql$(NC)"
+
+# ลบ migrations ทั้งหมด
+migration-clean:
+	@echo "$(RED)⚠️  WARNING: This will delete ALL migration files$(NC)"
+	@if [ -d "$(DIR_MIGRATIONS)" ]; then \
+        echo ""; \
+        echo "$(YELLOW)Files to be deleted:$(NC)"; \
+        ls -1 $(DIR_MIGRATIONS)/*.cs 2>/dev/null || echo "  (none)"; \
+        echo ""; \
+    fi
+	@read -p "Are you sure? (type 'yes' to confirm): " confirm; \
+    if [ "$$confirm" = "yes" ]; then \
+        rm -rf $(DIR_MIGRATIONS); \
+        echo "$(GREEN)✅ Migration folder cleaned$(NC)"; \
+        echo "$(YELLOW)💡 Run 'make migration-first' to create new initial migration$(NC)"; \
+    else \
+        echo "$(YELLOW)Cancelled$(NC)"; \
+    fi
+
+# แสดงวิธีใช้งาน migrations
+migration-help:
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(CYAN)              EF Core Migrations - Help Guide              $(NC)"
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "$(YELLOW)🚀 Quick Start:$(NC)"
+	@if [ "$(call is_first_migration)" = "true" ]; then \
+        echo "  $(GREEN)→ You need to create your first migration:$(NC)"; \
+        echo "     $(GREEN)make migration-first$(NC)"; \
+    else \
+        echo "  $(GREEN)✓ Migrations already exist$(NC)"; \
+    fi
+	@echo ""
+	@echo "$(YELLOW)📦 Creating Migrations:$(NC)"
+	@echo "  $(GREEN)make migration-first$(NC)      - First time project setup"
+	@echo "  $(GREEN)make migration-add$(NC)        - Add new EF Core migration"
+	@echo ""
+	@echo "$(YELLOW)🔄 Applying Migrations:$(NC)"
+	@echo "  $(GREEN)make migration-apply$(NC)      - Apply pending migrations"
+	@echo ""
+	@echo "$(YELLOW)📋 Status & Info:$(NC)"
+	@echo "  $(GREEN)make migration-status$(NC)     - Check migration status"
+	@echo "  $(GREEN)make migration-list$(NC)       - List migration files"
+	@echo ""
+	@echo "$(YELLOW)🔧 Management:$(NC)"
+	@echo "  $(GREEN)make migration-rollback$(NC)   - Rollback all migrations"
+	@echo "  $(GREEN)make migration-remove$(NC)     - Remove last migration"
+	@echo "  $(GREEN)make migration-script$(NC)     - Generate SQL script"
+	@echo ""
+	@echo "$(YELLOW)🆘 Troubleshooting:$(NC)"
+	@echo "  $(GREEN)make migration-fix$(NC)        - Quick fix for problems"
+	@echo "  $(GREEN)make migration-clean$(NC)      - Delete all migrations"
+	@echo ""
+	@echo "$(YELLOW)💡 Environment Variables (.env):$(NC)"
+	@echo "  ADD_NEW_MIGRATION=true    - Enable migration creation"
+	@echo "  MIGRATION_NAME=YourName   - Set migration name"
+	@echo ""
+	@echo "$(YELLOW)📁 Directory:$(NC)"
+	@echo "  $(DIR_MIGRATIONS)"
+	@echo ""
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                     QUICK START                           ║
+# ╚═══════════════════════════════════════════════════════════╝
 
 .PHONY: first-run
 first-run:
-	@echo "$(BLUE)╔═══════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(BLUE)║          First Time Setup                                  ║$(NC)"
-	@echo "$(BLUE)╚═══════════════════════════════════════════════════════════╝$(NC)"
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(BLUE)                   First Time Setup                        $(NC)"
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Step 1: Initializing project...$(NC)"
+	@$(MAKE) init-project
+	@echo ""
+	@$(MAKE) check-app-url
+	@read -p "Continue with setup? (Y/n): " confirm; \
+	[ "$$confirm" != "n" ] || exit 1
 	@[ -f "$(FILE_PASSWORD)" ] || $(MAKE) create-password
-	@echo "$(YELLOW)🧹 Cleaning...$(NC)"
+	@echo "$(YELLOW)🧹 Cleaning previous setup...$(NC)"
 	@docker compose $(COMPOSE_PROFILES) down -v 2>/dev/null || true
-	@echo "$(YELLOW)📦 Initializing volumes...$(NC)"
-	@$(DIR_DATABASE)/begin-volumes.sh
-	@echo "$(YELLOW)🏗️ Building...$(NC)"
+	@echo "$(YELLOW)📁 Initializing volumes...$(NC)"
+	@$(MAKE) volumes-init
+	@echo "$(YELLOW)🏗️  Building containers...$(NC)"
 	@$(MAKE) build
-	@echo "$(YELLOW)💾 Installing database...$(NC)"
+	@echo "$(YELLOW)💾 Setting up database...$(NC)"
 	@$(MAKE) install
+	@echo "$(YELLOW)🔄 Creating initial migration...$(NC)"
+	@echo "$(YELLOW)Step 4: Setting up migrations...$(NC)"
+	@if [ "$$($(MAKE) -s check-first-migration)" = "true" ]; then \
+        echo "$(CYAN)Creating initial migration...$(NC)"; \
+        $(MAKE) migration-add || echo "$(YELLOW)⚠️  Migration setup incomplete$(NC)"; \
+    else \
+        echo "$(GREEN)✓ Migrations already exist$(NC)"; \
+        $(MAKE) migration-apply || echo "$(YELLOW)⚠️  Migration apply incomplete$(NC)"; \
+    fi
+	@echo ""
 	@echo "$(YELLOW)🚀 Starting services...$(NC)"
 	@docker compose up -d
-	@$(MAKE) wait-for-health
-	@echo "$(YELLOW)🔧 Installing GraphQL tools...$(NC)"
-	@$(MAKE) install-graphql-utilities
+	@$(MAKE) wait-health
 	@echo "$(YELLOW)🔮 Setting up GraphQL...$(NC)"
 	@sleep 10
 	@$(MAKE) graphql-setup || echo "$(YELLOW)⚠️  GraphQL setup incomplete$(NC)"
-	@echo "$(GREEN)╔═══════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(GREEN)║          🎉 Setup Complete!                               ║$(NC)"
-	@echo "$(GREEN)╚═══════════════════════════════════════════════════════════╝$(NC)"
-	@$(MAKE) show-urls
+	@echo ""
+	@echo "$(GREEN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(GREEN)                   🎉 Setup Complete!                      $(NC)"
+	@echo "$(GREEN)═══════════════════════════════════════════════════════════$(NC)"
+	@$(MAKE) show-env
+	@echo ""
+	@$(MAKE) urls
 	@$(MAKE) status
 
-.PHONY: install
-install: check-password setup-scripts
-	@echo "$(BLUE)Installing Database$(NC)"
-	@docker compose up -d $(SERVICE_DB)
-	@$(MAKE) wait-for-db
-	@docker compose --profile setup run --rm queue-db-migration
-	@docker compose --profile migration run --rm migration-db
-	@echo "$(GREEN)✅ Database installed$(NC)"
+.PHONY: check-first-migration
+check-first-migration:
+	@if [ ! -d "$(DIR_MIGRATIONS)" ]; then \
+        echo "true"; \
+    elif [ -z "$$(find $(DIR_MIGRATIONS) -name '*.cs' 2>/dev/null)" ]; then \
+        echo "true"; \
+    else \
+        echo "false"; \
+    fi
 
-.PHONY: build
+.PHONY: dev
+dev: check-password check-app-url
+	@docker compose up -d
+	@echo "$(GREEN)✅ Development mode started$(NC)"
+	@$(MAKE) urls
+
+.PHONY: prod
+prod: check-password check-app-url
+	@docker compose --profile production up -d
+	@echo "$(GREEN)✅ Production mode started$(NC)"
+	@$(MAKE) urls
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                   DOCKER OPERATIONS                       ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: build build-no-cache up down restart stop logs status ps
+
 build:
-	@echo "$(CYAN)📦 Building Images...$(NC)"
+	@echo "$(YELLOW)🏗️  Building containers...$(NC)"
 	@docker compose build
 
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                         RUNNING                           ║
-# ╚═══════════════════════════════════════════════════════════╝
+build-no-cache:
+	@echo "$(YELLOW)🏗️  Building containers (no cache)...$(NC)"
+	@docker compose build --no-cache
 
-.PHONY: dev prod stop restart
-dev: check-password
+up:
+	@echo "$(YELLOW)🚀 Starting services...$(NC)"
 	@docker compose up -d
-	@echo "$(GREEN)✅ Development started$(NC)"
-	@$(MAKE) show-urls
 
-prod: check-password
-	@docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-	@echo "$(GREEN)✅ Production started$(NC)"
+down:
+	@echo "$(YELLOW)⏹️  Stopping services...$(NC)"
+	@docker compose down
 
-stop:
-	@docker compose $(COMPOSE_PROFILES) down
-	@echo "$(GREEN)✅ Stopped$(NC)"
+restart:
+	@echo "$(YELLOW)🔄 Restarting services...$(NC)"
+	@docker compose restart
+	@echo "$(GREEN)✅ Services restarted$(NC)"
 
-restart: stop dev
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                        FRONTEND                           ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: frontend-dev frontend-logs frontend-shell frontend-restart
-frontend-dev:
-	@docker compose exec $(SERVICE_FRONTEND) npm run dev
-
-frontend-logs:
-	@docker compose logs -f $(SERVICE_FRONTEND)
-
-frontend-shell:
-	@docker compose exec $(SERVICE_FRONTEND) bash
-
-frontend-restart:
-	@docker compose restart $(SERVICE_FRONTEND)
-	@echo "$(GREEN)✅ Frontend restarted$(NC)"
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                        GRAPHQL                            ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: graphql
-.PHONY: graphql-setup graphql-download graphql-generate
-.PHONY: graphql-assure graphql-wait graphql-test graphql-check
-.PHONY: graphql-fix-safe graphql-watch graphql-validate graphql-reset
-.PHONY: graphql-status
-.PHONY: graphql-health
-
-graphql: graphql-assure graphql-download graphql-generate
-
-graphql-fallback: graphql-assure
-
-# Main GraphQL setup (ใช้ใน first-run)
-graphql-setup: graphql-wait graphql-assure graphql-download graphql-generate
-	@echo "$(GREEN)✅ GraphQL setup complete$(NC)"
-
-# สร้าง placeholder files
-graphql-assure:
-	@echo "$(BLUE)Creating Placeholder Files$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) npm run assure-files || true
-	@echo "$(GREEN)✅ Placeholder files created$(NC)"
-
-# รอ GraphQL พร้อม
-graphql-wait:
-	@echo "$(YELLOW)⏳ Waiting for GraphQL endpoint...$(NC)"
-	@echo "$(CYAN)Testing backend health first...$(NC)"
-	@# รอ backend health check ผ่านก่อน
-	@elapsed=0; \
-    max_time=60; \
-    while [ $$elapsed -lt $$max_time ]; do \
-		if curl -sf http://localhost:5000/health >/dev/null 2>&1; then \
-			echo "$(GREEN)✅ Backend health check passed ($$elapsed/$$max_time s)$(NC)"; \
-			break; \
-		fi; \
-		printf "\r  Waiting for backend... $$elapsed/$$max_time s"; \
-		sleep 5; \
-		elapsed=$$((elapsed + 5)); \
-	done; \
-	if [ $$elapsed -ge $$max_time ]; then \
-		echo ""; \
-		echo "$(RED)❌ Backend health check timeout$(NC)"; \
-		exit 1; \
-	fi
-	@echo ""
-	@echo "$(CYAN)Testing GraphQL endpoint...$(NC)"
-	@# รอ GraphQL endpoint พร้อม
-	@elapsed=0; \
-	max_time=$(TIMEOUT_GRAPHQL); \
-	while [ $$elapsed -lt $$max_time ]; do \
-		if docker compose exec -T $(SERVICE_FRONTEND) sh -c '\
-			curl -sf -X POST http://aspdotnetweb:5000/graphql \
-			-H "Content-Type: application/json" \
-			-H "X-Allow-Introspection: true" \
-			-d "{\"query\":\"{__typename}\"}" >/dev/null 2>&1'; then \
-			echo "$(GREEN)✅ GraphQL ready ($$elapsed/$$max_time s)$(NC)"; \
-			exit 0; \
-		fi; \
-		printf "\r  Waiting for GraphQL... $$elapsed/$$max_time s"; \
-		sleep 5; \
-		elapsed=$$((elapsed + 5)); \
-	done; \
-	echo ""; \
-	echo "$(YELLOW)⚠️  GraphQL timeout - will use placeholder files$(NC)"; \
-	exit 0
-
-graphql-download:
-	@echo "$(BLUE)📥 Downloading GraphQL Schema$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) bash -c '\
-        set +e; \
-        echo "Testing GraphQL connection..."; \
-        if ! curl -sf -X POST http://aspdotnetweb:5000/graphql \
-            -H "Content-Type: application/json" \
-            -H "X-Allow-Introspection: true" \
-            -d "{\"query\":\"{__typename}\"}" >/dev/null 2>&1; then \
-            echo "❌ GraphQL endpoint not accessible"; \
-            echo "⚠️  Using placeholder schema"; \
-            npm run assure-files; \
-            exit 0; \
-        fi; \
-        \
-        echo "Running schema download script..."; \
-        if timeout 60 bash ./scripts/download-schema.sh 2>&1 | tee /tmp/schema-download.log; then \
-            if [ -f apollo/schema.graphql ] && [ -s apollo/schema.graphql ]; then \
-                if grep -q "type Query" apollo/schema.graphql 2>/dev/null || \
-                   grep -q "\"__schema\"" apollo/schema.graphql 2>/dev/null; then \
-                    lines=$$(wc -l < apollo/schema.graphql 2>/dev/null || echo 0); \
-                    echo "✅ Schema downloaded ($$lines lines)"; \
-                    exit 0; \
-                fi; \
-            fi; \
-        fi; \
-        \
-        echo "⚠️  Schema download failed/timeout"; \
-        echo "📋 Last 15 lines:"; \
-        tail -n 15 /tmp/schema-download.log 2>/dev/null || echo "(no log)"; \
-        npm run assure-files; \
-        exit 0'
-
-# สร้าง GraphQL client
-graphql-generate:
-	@echo "$(BLUE)Generating GraphQL Client$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) sh -c '\
-        echo "Running codegen..."; \
-		if npm run codegen 2>&1 | tee /tmp/codegen.log; then \
-			echo ""; \
-			echo "✅ GraphQL client generated successfully"; \
-			\
-			if [ -f apollo/generated/graphql.ts ]; then \
-				size=$$(wc -c < apollo/generated/graphql.ts); \
-				if [ $$size -gt 1000 ]; then \
-					echo "✅ Generated files appear valid ($$size bytes)"; \
-				else \
-					echo "⚠️  Generated files may be incomplete ($$size bytes)"; \
-				fi; \
-			fi; \
-			exit 0; \
-		else \
-			exit_code=$$?; \
-			echo ""; \
-			echo "⚠️  Codegen encountered issues (exit code: $$exit_code)"; \
-			echo ""; \
-			echo "📋 Last 20 lines of output:"; \
-			tail -n 20 /tmp/codegen.log 2>/dev/null || cat /tmp/codegen.log; \
-			echo ""; \
-			echo "📝 Ensuring placeholder files exist..."; \
-			npm run assure-files; \
-			echo "⚠️  Using placeholder files"; \
-			exit 0; \
-		fi'
-	@$(MAKE) graphql-check 
-
-# ทดสอบ GraphQL
-graphql-test:
-	@echo "$(YELLOW)Testing GraphQL Endpoint...$(NC)"
-	@echo ""
-	@echo "$(CYAN)1️⃣  Testing backend health:$(NC)"
-	@if curl -sf http://localhost:5000/health -o /tmp/health-test.json 2>/dev/null; then \
-		echo "$(GREEN)  ✅ Backend health OK$(NC)"; \
-		cat /tmp/health-test.json 2>/dev/null || echo "  (No response body)"; \
-		rm -f /tmp/health-test.json; \
-	else \
-		echo "$(RED)  ❌ Backend health check failed$(NC)"; \
-	fi
-	@echo ""
-	@echo "$(CYAN)2️⃣  Testing GraphQL from host:$(NC)"
-	@if curl -sf -X POST http://localhost:5000/graphql \
-		-H "Content-Type: application/json" \
-		-H "X-Allow-Introspection: true" \
-		-d '{"query":"{ __typename }"}' \
-		-o /tmp/graphql-test.json 2>/dev/null; then \
-		echo "$(GREEN)  ✅ Host connection OK$(NC)"; \
-		cat /tmp/graphql-test.json | jq '.' 2>/dev/null || cat /tmp/graphql-test.json; \
-		rm -f /tmp/graphql-test.json; \
-	else \
-		echo "$(RED)  ❌ Host connection failed$(NC)"; \
-	fi
-	@echo ""
-	@echo "$(CYAN)3️⃣  Testing GraphQL from frontend container:$(NC)"
-	@if docker compose exec -T $(SERVICE_FRONTEND) sh -c '\
-		curl -sf -X POST http://aspdotnetweb:5000/graphql \
-		-H "Content-Type: application/json" \
-		-H "X-Allow-Introspection: true" \
-		-d "{\"query\":\"{__typename}\"}"' 2>/dev/null | jq '.' 2>/dev/null; then \
-		echo "$(GREEN)  ✅ Container connection OK$(NC)"; \
-	else \
-		echo "$(RED)  ❌ Container connection failed$(NC)"; \
-	fi
-	@echo ""
-
-# ตรวจสอบ files
-graphql-check:
-	@echo "📝 Schema Status:"
-	@echo "  • File: $(GRAPHQL_SCHEMA_FILE)"
-	@echo "  • Mode: $$(grep -q _placeholder $(GRAPHQL_SCHEMA_FILE) && echo '🚧 Placeholder' || echo '✔️ Real schema')"
-	@echo "  • Format: $$(file $(GRAPHQL_SCHEMA_FILE) | grep -q text && echo 'SDL' || echo 'JSON/Other')"
-
-# แก้ไขปัญหา GraphQL
-graphql-fix-safe:
-	@echo "$(YELLOW)⚙️ Fixing GraphQL safely...$(NC)"
-	@$(MAKE) graphql-assure
-	@$(MAKE) graphql-wait || true
-	@$(MAKE) graphql-download || true
-	@$(MAKE) graphql-generate || true
-
-# Watch mode for development
-graphql-watch:
-	@echo "$(BLUE)👀 Starting GraphQL Codegen Watch Mode$(NC)"
-	@echo "$(YELLOW)Press Ctrl+C to stop$(NC)"
-	@echo ""
-	@docker compose exec $(SERVICE_FRONTEND) npm run codegen:watch
-
-# Validate GraphQL setup
-graphql-validate:
-	@docker compose exec $(SERVICE_FRONTEND) npx graphql-inspector validate \
-        apollo/**/*.graphql apollo/schema.graphql || echo "⚠️ Schema validation failed or skipped"
-
-# Complete GraphQL reset and setup
-graphql-reset:
-	@echo "$(RED)⚠️  Resetting GraphQL setup...$(NC)"
-	@read -p "This will delete all GraphQL files. Continue? (y/N): " confirm; \
-    if [ "$$confirm" != "y" ]; then \
-        echo "Cancelled."; \
-        exit 1; \
-    fi
-	@docker compose exec -T $(SERVICE_FRONTEND) sh -c '\
-        rm -rf apollo/generated/* apollo/schema.graphql && \
-        echo "🧹 Cleaned all GraphQL files"'
-	@echo ""
-	@$(MAKE) graphql-setup
-	@echo ""
-	@echo "$(GREEN)✅ GraphQL reset complete$(NC)"
-
-graphql-status:
-	@echo "$(BLUE)🔍 GraphQL Status Summary$(NC)"
-	@$(MAKE) -s graphql-check
-	@$(MAKE) -s graphql-validate
-
-graphql-health:
-	@echo -n "⏳ Checking GraphQL /health => "
-	@curl -sf http://localhost:5000/health > /dev/null 2>&1 && echo "$(GREEN)OK$(NC)" || echo "$(RED)FAILED$(NC)"
-	@echo -n "⏳ Checking GraphQL POST => "
-	@curl -sf -X POST http://localhost:5000/graphql \
-        -H "Content-Type: application/json" \
-        -H "X-Allow-Introspection: true" \
-        -d '{"query":"{__typename}"}' > /dev/null 2>&1 && echo "$(GREEN)OK$(NC)" || echo "$(RED)FAILED$(NC)"
-
-# Show GraphQL info (helpful for debugging)
-graphql-info:
-	@echo "$(BLUE)ℹ️  GraphQL Configuration$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Endpoints:$(NC)"
-	@echo "  Internal: $(GRAPHQL_ENDPOINT)"
-	@echo "  External: http://localhost:5000/graphql"
-	@echo ""
-	@echo "$(YELLOW)Timeouts:$(NC)"
-	@echo "  Wait timeout: $(TIMEOUT_GRAPHQL)s"
-	@echo ""
-	@echo "$(YELLOW)Files:$(NC)"
-	@echo "  Schema: apollo/schema.graphql"
-	@echo "  Generated: apollo/generated/"
-	@echo ""
-	@$(MAKE) graphql-check
-
-.PHONY: install-graphql-utilities
-install-graphql-utilities:
-	@echo "$(BLUE)Installing GraphQL Tools$(NC)"
-	@timeout=30; counter=0; \
-	until docker compose ps | grep -q "$(SERVICE_FRONTEND).*Up"; do \
-        echo "  ⏳ Waiting for frontend container... ($$counter/$$timeout s)"; \
-        sleep 2; counter=$$((counter+2)); \
-    done
-	@docker compose exec -T $(SERVICE_FRONTEND) sh -c '\
-        npm install -D \
-            graphql-json-to-sdl \
-            @graphql-inspector/cli \
-            graphql-cli \
-        && echo "✅ Tools installed" || echo "$(RED)❌ Failed$(NC)"'
-
-.PHONY: graphql-clean
-graphql-clean:
-	@echo "$(BLUE)🧹 Cleaning GraphQL generated files...$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) rm -rf apollo/generated/* || true
-
-.PHONY: graphql-schema-format
-graphql-schema-format:
-	@if [ -f "$(GRAPHQL_SCHEMA_FILE)" ]; then \
-        echo "$(BLUE)📋 Formatting schema...$(NC)"; \
-        npx prettier --write "$(GRAPHQL_SCHEMA_FILE)"; \
-    fi
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                        DATABASE                           ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: db-test db-wait db-shell db-migration
-
-db-test: check-password
-	@PASSWORD=$$(cat $(FILE_PASSWORD)); \
-    docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
-        -S localhost -U sa -P "$$PASSWORD" \
-        -Q "SELECT @@VERSION;" -C \
-        && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
-
-db-wait: check-password
-	@echo "$(YELLOW)⏳ Waiting for SQL Server...$(NC)"
-	@PASSWORD=$$(cat $(FILE_PASSWORD)); \
-    elapsed=0; \
-    while [ $$elapsed -lt $(TIMEOUT_DB) ]; do \
-        if docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
-            -S localhost -U sa -P "$$PASSWORD" \
-            -Q "SELECT 1" -C -b >/dev/null 2>&1; then \
-            echo "$(GREEN)✅ SQL Server ready ($$elapsed/$(TIMEOUT_DB)s)$(NC)"; \
-            exit 0; \
-        fi; \
-        printf "\r  Waiting... $$elapsed/$(TIMEOUT_DB)s"; \
-        sleep 5; \
-        elapsed=$$((elapsed + 5)); \
-    done; \
-    echo "$(RED)❌ Timeout$(NC)"; \
-    exit 1
-
-db-shell: check-password
-	@PASSWORD=$$(cat $(FILE_PASSWORD)); \
-    docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd \
-        -S localhost -U sa -P "$$PASSWORD" -C
-
-db-migration:
-	@[ -n "$(NAME)" ] || { echo "$(RED)Usage: make db-migration NAME=xxx$(NC)"; exit 1; }
-	@MIGRATION_NAME=$(NAME) ADD_NEW_MIGRATION=true \
-        docker compose --profile migration up migration-db
-	@echo "$(GREEN)✅ Migration created: $(NAME)$(NC)"
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                       MONITORING                          ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: logs status health wait-for-health show-urls
+stop: down
 
 logs:
 	@docker compose logs -f
 
 status:
-	@echo "$(BLUE)╔═══════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(BLUE)║          Service Status                                    ║$(NC)"
-	@echo "$(BLUE)╚═══════════════════════════════════════════════════════════╝$(NC)"
+	@echo "$(CYAN)📊 Container Status$(NC)"
 	@docker compose ps
 
-health:
-	@echo "$(YELLOW)Checking Health Endpoints...$(NC)"
-	@for service in "ASP.NET:http://localhost:5000/health" \
-                    "Nginx:http://localhost:80/health" \
-                    "Vite:http://localhost:5173" \
-                    "SSR:http://localhost:13714/health"; do \
-        name=$${service%%:*}; \
-        url=$${service#*:}; \
-        if curl -sf "$$url" >/dev/null 2>&1; then \
-            echo "  ✅ $$name"; \
-        else \
-            echo "  ❌ $$name"; \
-        fi; \
-    done
-
-wait-for-health:
-	@echo "$(YELLOW)⏳ Waiting for services to be healthy...$(NC)"
-	@elapsed=0; \
-	while [ $$elapsed -lt $(TIMEOUT_HEALTH) ]; do \
-        healthy=$$(docker compose ps | grep -c "healthy" 2>/dev/null || echo "0"); \
-        if [ $$healthy -ge 2 ]; then \
-            echo "$(GREEN)✅ Services healthy ($$elapsed/$(TIMEOUT_HEALTH)s)$(NC)"; \
-            exit 0; \
-        fi; \
-        printf "\r  Healthy: $$healthy ($$elapsed/$(TIMEOUT_HEALTH)s)"; \
-        sleep 5; \
-        elapsed=$$((elapsed + 5)); \
-    done; \
-    echo "$(RED)❌ Timeout$(NC)"; \
-    exit 1
-
-show-urls:
-	@echo "$(CYAN)╔═══════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(CYAN)║          Service URLs                                      ║$(NC)"
-	@echo "$(CYAN)╚═══════════════════════════════════════════════════════════╝$(NC)"
-	@echo "  • Frontend:  $(BLUE)http://localhost:5173$(NC)"
-	@echo "  • Backend:   $(BLUE)http://localhost:5000$(NC)"
-	@echo "  • GraphQL:   $(BLUE)http://localhost:5000/graphql$(NC)"
-	@echo "  • Swagger:   $(BLUE)http://localhost:5000/swagger$(NC)"
-	@echo "  • NginX:     $(BLUE)http://localhost:8080$(NC)"
-	@echo "  • SSR:       $(BLUE)http://localhost:13714$(NC)"
+ps: status
 
 # ╔═══════════════════════════════════════════════════════════╗
-# ║                       MAINTENANCE                         ║
+# ║                   PASSWORD MANAGEMENT                     ║
 # ╚═══════════════════════════════════════════════════════════╝
 
-.PHONY: clean rebuild reset fix-permissions remove-volumes
+# Password Requirements
+PASSWORD_MIN_LENGTH := 8
+PASSWORD_MAX_LENGTH := 32
 
-clean:
-	@docker compose $(COMPOSE_PROFILES) down
-	@echo "$(GREEN)✅ Cleaned$(NC)"
+.PHONY: create-password check-password validate-password
 
-rebuild: clean setup-scripts fix-line-endings build
+create-password:
+	@echo "$(YELLOW)🔐 Creating database password...$(NC)"
+	@mkdir -p $(DIR_SECRETS)
+	@if [ ! -f "$(FILE_PASSWORD)" ]; then \
+		echo ""; \
+        echo "$(CYAN)╔═══════════════════════════════════════════════════════╗$(NC)"; \
+        echo "$(CYAN)║           Password Requirements                       ║$(NC)"; \
+        echo "$(CYAN)╠═══════════════════════════════════════════════════════╣$(NC)"; \
+        echo "$(CYAN)║  • Length: $(PASSWORD_MIN_LENGTH) - $(PASSWORD_MAX_LENGTH) characters                       ║$(NC)"; \
+        echo "$(CYAN)║  • Recommended: mix of letters, numbers, symbols      ║$(NC)"; \
+        echo "$(CYAN)╚═══════════════════════════════════════════════════════╝$(NC)"; \
+        echo ""; \
+        while true; do \
+            echo "$(CYAN)Please enter your database password:$(NC)"; \
+            read -s password; \
+            echo ""; \
+            \
+            len=$${#password}; \
+            \
+            if [ $$len -lt $(PASSWORD_MIN_LENGTH) ]; then \
+                echo "$(RED)❌ Password too short: $$len characters (minimum: $(PASSWORD_MIN_LENGTH))$(NC)"; \
+                echo ""; \
+                continue; \
+            fi; \
+            \
+            if [ $$len -gt $(PASSWORD_MAX_LENGTH) ]; then \
+                echo "$(RED)❌ Password too long: $$len characters (maximum: $(PASSWORD_MAX_LENGTH))$(NC)"; \
+                echo ""; \
+                continue; \
+            fi; \
+            \
+            echo "$(CYAN)Please confirm your password:$(NC)"; \
+            read -s password_confirm; \
+            echo ""; \
+            \
+            if [ "$$password" = "$$password_confirm" ]; then \
+                echo -n "$$password" > $(FILE_PASSWORD); \
+                chmod 600 $(FILE_PASSWORD); \
+                echo "$(GREEN)✅ Password created successfully$(NC)"; \
+                echo "$(GRAY)   Length: $$len characters$(NC)"; \
+                echo "$(GRAY)   File: $(FILE_PASSWORD)$(NC)"; \
+                break; \
+            else \
+                echo "$(RED)❌ Passwords do not match$(NC)"; \
+                echo ""; \
+                read -p "Try again? (Y/n): " retry; \
+                if [ "$$retry" = "n" ] || [ "$$retry" = "N" ]; then \
+                    echo "$(YELLOW)Cancelled$(NC)"; \
+                    exit 1; \
+                fi; \
+                echo ""; \
+            fi; \
+        done; \
+    else \
+        echo "$(YELLOW)⚠️  Password already exists$(NC)"; \
+        echo "$(GRAY)   File: $(FILE_PASSWORD)$(NC)"; \
+        echo ""; \
+        echo "$(CYAN)💡 To change password:$(NC)"; \
+        echo "   $(GREEN)make reset-password$(NC)"; \
+    fi
 
-reset:
-	@echo "$(RED)⚠️  WARNING: This deletes EVERYTHING!$(NC)"
-	@echo "$(YELLOW)This will remove:$(NC)"
-	@echo "  • All containers"
-	@echo "  • All volumes (database data)"
-	@echo "  • All migrations"
-	@read -p "Type 'YES' to confirm: " confirm; \
-    [ "$$confirm" = "YES" ] || exit 1
-	@docker compose $(COMPOSE_PROFILES) down -v
-	@rm -rf $(DIR_MIGRATIONS)/*.cs 2>/dev/null || true
-	@echo "$(GREEN)✅ Reset complete$(NC)"
-	@echo "$(YELLOW)Run: make first-run$(NC)"
+# ════════════════════════════════════════════════════════════
+# ตรวจสอบความถูกต้องของ password ที่มีอยู่
+# ════════════════════════════════════════════════════════════
 
-fix-permissions:
-	@echo "$(BLUE)Fixing Permissions$(NC)"
-	@docker run --rm --user root \
-        -v $(PROJECT_NAME)_rssdata:/data \
-        -v $(PROJECT_NAME)_rssdata-logs:/logs \
-        -v $(PROJECT_NAME)_db-backups:/backups \
-        alpine:latest sh -c '\
-        chown -R 10001:0 /data /logs /backups && \
-        chmod -R 777 /data /logs /backups'
+validate-password:
+	@echo "$(CYAN)🔍 Validating password...$(NC)"
+	@if [ ! -f "$(FILE_PASSWORD)" ]; then \
+        echo "$(RED)❌ Password file not found$(NC)"; \
+        exit 1; \
+    fi
+	@len=$$(cat $(FILE_PASSWORD) | tr -d '\n' | wc -c); \
+    if [ $$len -lt $(PASSWORD_MIN_LENGTH) ]; then \
+        echo "$(RED)❌ Password too short: $$len characters (minimum: $(PASSWORD_MIN_LENGTH))$(NC)"; \
+        exit 1; \
+    elif [ $$len -gt $(PASSWORD_MAX_LENGTH) ]; then \
+        echo "$(RED)❌ Password too long: $$len characters (maximum: $(PASSWORD_MAX_LENGTH))$(NC)"; \
+        exit 1; \
+    else \
+        echo "$(GREEN)✅ Password valid: $$len characters$(NC)"; \
+    fi
+
+check-password:
+	@if [ ! -f "$(FILE_PASSWORD)" ]; then \
+        echo "$(RED)❌ Password file not found$(NC)"; \
+        echo "$(YELLOW)Creating password...$(NC)"; \
+        $(MAKE) create-password; \
+    else \
+        $(MAKE) validate-password; \
+    fi
+
+reset-password:
+	@echo "$(YELLOW)⚠️  This will delete the existing password$(NC)"
+	@read -p "Continue? (y/N): " confirm; \
+    if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
+        rm -f $(FILE_PASSWORD); \
+        echo "$(GREEN)✅ Old password removed$(NC)"; \
+        $(MAKE) create-password; \
+    else \
+        echo "$(YELLOW)Cancelled$(NC)"; \
+    fi
+
+password-info:
+	@echo "$(CYAN)🔐 Password Information$(NC)"
+	@echo "════════════════════════════════════════════════════════════"
+	@if [ -f "$(FILE_PASSWORD)" ]; then \
+        echo "$(GREEN)✅ Password file exists$(NC)"; \
+        echo "   File: $(FILE_PASSWORD)"; \
+        echo "   Length: $$(cat $(FILE_PASSWORD) | tr -d '\n' | wc -c) characters"; \
+        echo "   Permissions: $$(ls -la $(FILE_PASSWORD) | awk '{print $$1}')"; \
+        echo "   Modified: $$(ls -la $(FILE_PASSWORD) | awk '{print $$6, $$7, $$8}')"; \
+    else \
+        echo "$(RED)❌ Password file not found$(NC)"; \
+        echo ""; \
+        echo "$(YELLOW)💡 Create password:$(NC)"; \
+        echo "   $(GREEN)make create-password$(NC)"; \
+    fi
+	@echo ""
+	@echo "$(YELLOW)Requirements:$(NC)"
+	@echo "   Minimum: $(PASSWORD_MIN_LENGTH) characters"
+	@echo "   Maximum: $(PASSWORD_MAX_LENGTH) characters"
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                      INSTALLATION                         ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: install setup-scripts
+
+setup-scripts:
+	@echo "$(YELLOW)📜 Setting up scripts...$(NC)"
+	@chmod +x $(DIR_SCRIPTS)/setup/*.sh
+	@chmod +x $(DIR_SCRIPTS)/database/*.sh
+	@chmod +x $(DIR_SCRIPTS)/*.sh
+	@echo "$(GREEN)✅ Scripts ready$(NC)"
+
+install: setup-scripts check-password
+	@echo "$(YELLOW)💾 Installing database...$(NC)"
+	@docker compose $(COMPOSE_PROFILES) up -d $(SERVICE_DB)
+	@echo "$(YELLOW)⏳ Waiting for SQL Server...$(NC)"
+	@$(MAKE) db-wait
+	@echo "$(YELLOW)🔧 Running database setup...$(NC)"
+	@docker compose $(COMPOSE_PROFILES) run --rm db-setup
+	@echo "$(GREEN)✅ Database installed$(NC)"
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                     DATABASE OPERATIONS                   ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: db-setup db-wait db-test db-shell db-logs db-debug db-size
+.PHONY: db-migrate db-backup db-restore
+
+db-setup: install
+
+db-wait:
+	@echo "$(YELLOW)⏳ Waiting for database (timeout: $(TIMEOUT_DB)s)...$(NC)"
+	@timeout=$(TIMEOUT_DB); \
+	until docker compose exec -T $(SERVICE_DB) /opt/mssql-tools18/bin/sqlcmd \
+		-S localhost -U sa -P "$$(cat $(FILE_PASSWORD))" \
+		-C -Q "SELECT 1" >/dev/null 2>&1 || [ $$timeout -eq 0 ]; do \
+		echo "  ⏳ Waiting... ($$timeout seconds left)"; \
+		sleep 5; \
+		timeout=$$((timeout - 5)); \
+	done; \
+	if [ $$timeout -gt 0 ]; then \
+		echo "$(GREEN)✅ Database is ready$(NC)"; \
+	else \
+		echo "$(RED)❌ Database connection timeout$(NC)"; \
+		exit 1; \
+	fi
+
+db-test:
+	@echo "$(CYAN)🧪 Testing database connection$(NC)"
+	@docker compose exec -T $(SERVICE_DB) /opt/mssql-tools18/bin/sqlcmd \
+		-S localhost -U sa -P "$$(cat $(FILE_PASSWORD))" \
+		-C -Q "SELECT @@VERSION" && \
+	echo "$(GREEN)✅ Database connection successful$(NC)" || \
+	echo "$(RED)❌ Database connection failed$(NC)"
+
+db-shell:
+	@echo "$(CYAN)💻 Opening SQL shell...$(NC)"
+	@docker compose exec $(SERVICE_DB) /opt/mssql-tools18/bin/sqlcmd \
+		-S localhost -U sa -P "$$(cat $(FILE_PASSWORD))" -C
+
+db-logs:
+	@docker compose logs -f $(SERVICE_DB)
+
+db-debug:
+	@echo "$(CYAN)🐛 Database Debug Info$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Container Status:$(NC)"
+	@docker compose ps $(SERVICE_DB)
+	@echo ""
+	@echo "$(YELLOW)Recent Logs:$(NC)"
+	@docker compose logs --tail=50 $(SERVICE_DB)
+
+db-size:
+	@echo "$(CYAN)📊 Database Size$(NC)"
+	@docker compose exec -T $(SERVICE_DB) /opt/mssql-tools18/bin/sqlcmd \
+		-S localhost -U sa -P "$$(cat $(FILE_PASSWORD))" \
+		-C -Q "SELECT \
+			DB_NAME(database_id) AS DatabaseName, \
+			SUM(size * 8.0 / 1024) AS SizeMB \
+			FROM sys.master_files \
+			GROUP BY database_id"
+
+db-migrate:
+	@if [ -z "$(NAME)" ]; then \
+		echo "$(RED)❌ Please provide NAME=MigrationName$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)🔄 Creating migration: $(NAME)$(NC)"
+	@docker compose exec $(SERVICE_ASPNETCORE) dotnet ef migrations add $(NAME)
+	@echo "$(GREEN)✅ Migration created$(NC)"
+
+db-backup:
+	@echo "$(YELLOW)💾 Backing up database...$(NC)"
+	@mkdir -p $(DIR_BACKUPS)
+	@timestamp=$$(date +%Y%m%d_%H%M%S); \
+	backup_file="$(DIR_BACKUPS)/$(DATABASE_NAME)_$$timestamp.bak"; \
+	docker compose exec -T $(SERVICE_DB) /opt/mssql-tools18/bin/sqlcmd \
+		-S localhost -U sa -P "$$(cat $(FILE_PASSWORD))" \
+		-C -Q "BACKUP DATABASE $(DATABASE_NAME) TO DISK='/var/opt/mssql/backup/backup.bak'" && \
+	docker cp $$(docker compose ps -q $(SERVICE_DB)):/var/opt/mssql/backup/backup.bak $$backup_file && \
+	echo "$(GREEN)✅ Backup saved to: $$backup_file$(NC)"
+
+db-restore:
+	@if [ -z "$(FILE)" ]; then \
+		echo "$(RED)❌ Please provide FILE=backup.bak$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)📥 Restoring database from: $(FILE)$(NC)"
+	@docker cp $(FILE) $$(docker compose ps -q $(SERVICE_DB)):/var/opt/mssql/backup/restore.bak
+	@docker compose exec -T $(SERVICE_DB) /opt/mssql-tools18/bin/sqlcmd \
+		-S localhost -U sa -P "$$(cat $(FILE_PASSWORD))" \
+		-C -Q "RESTORE DATABASE $(DATABASE_NAME) FROM DISK='/var/opt/mssql/backup/restore.bak' WITH REPLACE"
+	@echo "$(GREEN)✅ Database restored$(NC)"
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                   FRONTEND OPERATIONS                     ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: frontend-build frontend-logs frontend-shell frontend-restart
+.PHONY: npm-install npm-update type-check lint test
+
+frontend-build:
+	@echo "$(YELLOW)🎨 Building frontend...$(NC)"
+	@docker compose build $(SERVICE_FRONTEND)
+	@echo "$(GREEN)✅ Frontend built$(NC)"
+
+frontend-logs:
+	@docker compose logs -f $(SERVICE_FRONTEND)
+
+frontend-shell:
+	@echo "$(CYAN)💻 Opening frontend shell...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) /bin/sh
+
+frontend-restart:
+	@echo "$(YELLOW)🔄 Restarting frontend...$(NC)"
+	@docker compose restart $(SERVICE_FRONTEND)
+	@echo "$(GREEN)✅ Frontend restarted$(NC)"
+
+npm-install:
+	@echo "$(YELLOW)📦 Installing npm packages...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) npm install
+	@echo "$(GREEN)✅ Packages installed$(NC)"
+
+npm-update:
+	@echo "$(YELLOW)📦 Updating npm packages...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) npm update
+	@echo "$(GREEN)✅ Packages updated$(NC)"
+
+type-check:
+	@echo "$(YELLOW)🔍 Running TypeScript check...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) npm run type-check
+
+lint:
+	@echo "$(YELLOW)🔍 Running linter...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) npm run lint
+
+test:
+	@echo "$(YELLOW)🧪 Running tests...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) npm test
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                   GRAPHQL OPERATIONS                      ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: graphql-setup graphql-wait graphql-test graphql-check graphql-reset
+.PHONY: graphql-generate graphql-download graphql-watch graphql-validate
+.PHONY: graphql-info graphql-status graphql-clean graphql-health
+
+graphql-setup:
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(BLUE)              Setting up GraphQL                           $(NC)"
+	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
+	@$(MAKE) graphql-wait
+	@$(MAKE) graphql-download
+	@$(MAKE) graphql-generate
+	@$(MAKE) graphql-test
+	@echo "$(GREEN)✅ GraphQL setup complete$(NC)"
+
+graphql-wait:
+	@echo "$(YELLOW)⏳ Waiting for GraphQL (timeout: $(TIMEOUT_GRAPHQL)s)...$(NC)"
+	@timeout=$(TIMEOUT_GRAPHQL); \
+	until curl -sf http://localhost:5000/graphql >/dev/null 2>&1 || [ $$timeout -eq 0 ]; do \
+		echo "  ⏳ Waiting... ($$timeout seconds left)"; \
+		sleep 5; \
+		timeout=$$((timeout - 5)); \
+	done; \
+	if [ $$timeout -gt 0 ]; then \
+		echo "$(GREEN)✅ GraphQL endpoint is ready$(NC)"; \
+	else \
+		echo "$(RED)❌ GraphQL endpoint timeout$(NC)"; \
+		exit 1; \
+	fi
+
+graphql-test:
+	@echo "$(CYAN)🧪 Testing GraphQL endpoint$(NC)"
+	@curl -sf http://localhost:5000/graphql \
+		-H "Content-Type: application/json" \
+		-d '{"query":"{ __schema { queryType { name } } }"}' \
+		>/dev/null 2>&1 && \
+	echo "$(GREEN)✅ GraphQL endpoint is working$(NC)" || \
+	echo "$(RED)❌ GraphQL endpoint is not responding$(NC)"
+
+graphql-check:
+	@echo "$(CYAN)🔍 Checking GraphQL schema$(NC)"
+	@if [ -f "$(FILE_SCHEMA)" ]; then \
+		echo "$(GREEN)✅ Schema file exists$(NC)"; \
+		ls -lh $(FILE_SCHEMA); \
+	else \
+		echo "$(RED)❌ Schema file not found$(NC)"; \
+	fi
+
+graphql-reset:
+	@echo "$(YELLOW)🔄 Resetting GraphQL files...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) rm -rf apollo/generated/* apollo/schema.graphql
+	@echo "$(GREEN)✅ GraphQL files reset$(NC)"
+	@$(MAKE) graphql-setup
+
+graphql-generate:
+	@echo "$(YELLOW)🔮 Generating GraphQL client...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) npm run graphql:codegen
+	@echo "$(GREEN)✅ GraphQL client generated$(NC)"
+
+graphql-download:
+	@echo "$(YELLOW)📥 Downloading GraphQL schema...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) npm run graphql:download
+	@echo "$(GREEN)✅ Schema downloaded$(NC)"
+
+graphql-watch:
+	@echo "$(YELLOW)👀 Starting GraphQL codegen watch mode...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) npm run graphql:watch
+
+graphql-validate:
+	@echo "$(YELLOW)✅ Validating GraphQL schema...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) npm run graphql:validate
+
+graphql-info:
+	@echo "$(CYAN)ℹ️  GraphQL Configuration$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Endpoint:$(NC) http://localhost:5000/graphql"
+	@echo "$(YELLOW)Schema:$(NC) $(FILE_SCHEMA)"
+	@echo "$(YELLOW)Generated:$(NC) $(DIR_APOLLO)/generated"
+
+graphql-status:
+	@echo "$(CYAN)📊 GraphQL Status$(NC)"
+	@curl -sf http://localhost:5000/graphql >/dev/null 2>&1 && \
+		echo "$(GREEN)✅ Endpoint: OK$(NC)" || \
+		echo "$(RED)❌ Endpoint: DOWN$(NC)"
+	@[ -f "$(FILE_SCHEMA)" ] && \
+		echo "$(GREEN)✅ Schema: OK$(NC)" || \
+		echo "$(RED)❌ Schema: Missing$(NC)"
+
+graphql-clean:
+	@echo "$(YELLOW)🧹 Cleaning generated files...$(NC)"
+	@docker compose exec $(SERVICE_FRONTEND) rm -rf apollo/generated/*
+	@echo "$(GREEN)✅ Clean complete$(NC)"
+
+graphql-health:
+	@echo "$(CYAN)🏥 Testing GraphQL health$(NC)"
+	@curl -sf http://localhost:5000/health || echo "$(RED)❌ Health check failed$(NC)"
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                     VOLUME MANAGEMENT                     ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: volumes-init volumes-check volumes-fix volumes-list volumes-clean
+
+volumes-init:
+	@echo "$(YELLOW)📁 Initializing volumes...$(NC)"
+	@mkdir -p $(DIR_DATABASE)/data $(DIR_DATABASE)/log $(DIR_DATABASE)/backup
+	@chmod 755 $(DIR_DATABASE)/data $(DIR_DATABASE)/log $(DIR_DATABASE)/backup
+	@echo "$(GREEN)✅ Volumes initialized$(NC)"
+
+volumes-check:
+	@echo "$(CYAN)🔍 Checking volume permissions$(NC)"
+	@ls -la $(DIR_DATABASE)
+
+volumes-fix:
+	@echo "$(YELLOW)🔧 Fixing volume permissions...$(NC)"
+	@chmod -R 755 $(DIR_DATABASE)
 	@echo "$(GREEN)✅ Permissions fixed$(NC)"
 
-remove-volumes: clean
-	@echo "$(RED)🔥 Removing all project volumes associated with $(PROJECT_NAME)...$(NC)"
-	@docker volume ls -q -f name=$(PROJECT_NAME) | xargs -r docker volume rm
-	@echo "$(GREEN)✅ All project volumes removed successfully.$(NC)"
+volumes-list:
+	@echo "$(CYAN)📊 Project Volumes$(NC)"
+	@docker volume ls | grep $(PROJECT_NAME) || echo "$(YELLOW)No volumes found$(NC)"
+
+volumes-clean:
+	@echo "$(RED)⚠️  This will remove all volumes!$(NC)"
+	@read -p "Continue? (yes/NO): " confirm; \
+	[ "$$confirm" = "yes" ] || exit 0
+	@docker compose down -v
+	@echo "$(GREEN)✅ Volumes removed$(NC)"
 
 # ╔═══════════════════════════════════════════════════════════╗
-# ║                         UTILITIES                         ║
+# ║                   HEALTH & MONITORING                     ║
 # ╚═══════════════════════════════════════════════════════════╝
 
-.PHONY: check-host-tools debug quick
+.PHONY: health health-full wait-health urls quick
 
-check-host-tools:
-	@echo "$(YELLOW)Checking Host Tools...$(NC)"
-	@for tool in bash docker docker-compose make curl; do \
-        if command -v $$tool >/dev/null 2>&1; then \
-            version=$$($$tool --version 2>&1 | head -1); \
-            echo "  ✅ $$tool - $$version"; \
-        else \
-            echo "  ❌ $$tool - MISSING"; \
-        fi; \
-    done
-	@for tool in dos2unix jq; do \
-        if command -v $$tool >/dev/null 2>&1; then \
-            echo "  ✅ $$tool (optional)"; \
-        else \
-            echo "  ⚠️  $$tool (optional, not installed)"; \
-        fi; \
-    done
+health:
+	@echo "$(CYAN)🏥 Quick Health Check$(NC)"
+	@echo ""
+	@curl -sf http://localhost:5000/health >/dev/null 2>&1 && \
+		echo "$(GREEN)✅ Backend: OK$(NC)" || \
+		echo "$(RED)❌ Backend: DOWN$(NC)"
+	@curl -sf http://localhost:5173 >/dev/null 2>&1 && \
+		echo "$(GREEN)✅ Frontend: OK$(NC)" || \
+		echo "$(RED)❌ Frontend: DOWN$(NC)"
+	@docker compose exec -T $(SERVICE_DB) /opt/mssql-tools18/bin/sqlcmd \
+		-S localhost -U sa -P "$$(cat $(FILE_PASSWORD))" \
+		-C -Q "SELECT 1" >/dev/null 2>&1 && \
+		echo "$(GREEN)✅ Database: OK$(NC)" || \
+		echo "$(RED)❌ Database: DOWN$(NC)"
 
-debug:
-	@echo "$(BLUE)╔═══════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(BLUE)║          Debug Information                                 ║$(NC)"
-	@echo "$(BLUE)╚═══════════════════════════════════════════════════════════╝$(NC)"
-	@echo "$(YELLOW)OS:$(NC) $(UNAME_S)"
-	@echo "$(YELLOW)Project:$(NC) $(PROJECT_NAME)"
-	@echo "$(YELLOW)GraphQL Endpoint:$(NC) $(GRAPHQL_ENDPOINT)"
-	@echo "$(YELLOW)Timeouts:$(NC) DB=$(TIMEOUT_DB)s, GraphQL=$(TIMEOUT_GRAPHQL)s, Health=$(TIMEOUT_HEALTH)s"
+health-full:
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(CYAN)              Detailed Health Report                       $(NC)"
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@$(MAKE) status
+	@echo ""
+	@$(MAKE) health
+	@echo ""
+	@$(MAKE) graphql-status
+
+wait-health:
+	@echo "$(YELLOW)⏳ Waiting for all services (timeout: $(TIMEOUT_HEALTH)s)...$(NC)"
+	@timeout=$(TIMEOUT_HEALTH); \
+	until curl -sf http://localhost:5000/health >/dev/null 2>&1 && \
+		  curl -sf http://localhost:5173 >/dev/null 2>&1 || \
+		  [ $$timeout -eq 0 ]; do \
+		echo "  ⏳ Waiting... ($$timeout seconds left)"; \
+		sleep 10; \
+		timeout=$$((timeout - 10)); \
+	done; \
+	if [ $$timeout -gt 0 ]; then \
+		echo "$(GREEN)✅ All services are healthy$(NC)"; \
+	else \
+		echo "$(RED)❌ Health check timeout$(NC)"; \
+		exit 1; \
+	fi
+
+urls:
+	@echo "$(CYAN)🔗 Service URLs$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Frontend:$(NC)     http://localhost:5173"
+	@echo "$(YELLOW)Backend:$(NC)      http://localhost:5000"
+	@echo "$(YELLOW)GraphQL:$(NC)      http://localhost:5000/graphql"
+	@echo "$(YELLOW)Swagger:$(NC)      http://localhost:5000/swagger"
+	@echo "$(YELLOW)Nginx:$(NC)        http://localhost:8080"
+
+quick:
+	@echo "$(CYAN)⚡ Quick System Check$(NC)"
 	@echo ""
 	@$(MAKE) status
 	@echo ""
 	@$(MAKE) health
 
-quick:
-	@$(MAKE) -s check-host-tools
-	@$(MAKE) -s graphql-status
-	@$(MAKE) -s graphql-health
-
-.PHONY: ci-check
-
-ci-check:
-	@$(MAKE) graphql-check
-	@$(MAKE) graphql-validate
-	@$(MAKE) type-check
-	@$(MAKE) lint
-
 # ╔═══════════════════════════════════════════════════════════╗
-# ║                    DEVELOPMENT TOOLS                      ║
+# ║                      MAINTENANCE                          ║
 # ╚═══════════════════════════════════════════════════════════╝
 
-.PHONY: dev-reset dev-clean npm-install npm-update type-check lint
+.PHONY: clean rebuild reset fix-line-endings
 
-# ✅ Reset development environment
-dev-reset:
-	@echo "$(RED)⚠️  Resetting development environment...$(NC)"
+clean:
+	@echo "$(YELLOW)🧹 Cleaning containers...$(NC)"
 	@docker compose down
-	@docker compose exec -T $(SERVICE_FRONTEND) sh -c '\
-		rm -rf node_modules/.vite node_modules/.cache apollo/generated/* && \
-		echo "✅ Caches cleared"'
-	@$(MAKE) graphql-assure
-	@docker compose up -d $(SERVICE_FRONTEND)
-	@echo "$(GREEN)✅ Development environment reset$(NC)"
+	@echo "$(GREEN)✅ Containers removed$(NC)"
 
-# ✅ Clean frontend caches
-dev-clean:
-	@echo "$(BLUE)🧹 Cleaning frontend caches...$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) sh -c '\
-		rm -rf node_modules/.vite node_modules/.cache .turbo dist && \
-		echo "✅ Caches cleaned"'
+rebuild:
+	@echo "$(YELLOW)🔄 Rebuilding everything...$(NC)"
+	@docker compose down
+	@docker compose build --no-cache
+	@docker compose up -d
+	@echo "$(GREEN)✅ Rebuild complete$(NC)"
 
-# ✅ Install/update npm packages
-npm-install:
-	@echo "$(BLUE)📦 Installing npm packages...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm install
+reset:
+	@echo "$(RED)⚠️  FULL RESET - This will remove all data!$(NC)"
+	@read -p "Type 'yes' to continue: " confirm; \
+	[ "$$confirm" = "yes" ] || exit 0
+	@echo "$(YELLOW)1. Stopping services...$(NC)"
+	@docker compose down -v
+	@echo "$(YELLOW)2. Removing volumes...$(NC)"
+	@rm -rf $(DIR_DATABASE)/data/* $(DIR_DATABASE)/log/* $(DIR_DATABASE)/backup/*
+	@echo "$(YELLOW)3. Cleaning build cache...$(NC)"
+	@docker builder prune -f
+	@echo "$(GREEN)✅ Reset complete$(NC)"
+	@echo "$(YELLOW)Run 'make first-run' to start fresh$(NC)"
 
-npm-update:
-	@echo "$(BLUE)📦 Updating npm packages...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm update
-
-# ✅ TypeScript type checking
-type-check:
-	@echo "$(BLUE)🔍 Running TypeScript type check...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm run type-check
-
-# ✅ Lint code
-lint:
-	@echo "$(BLUE)🔍 Running linter...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm run lint
-
-lint-fix:
-	@echo "$(BLUE)🔧 Fixing linting issues...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm run lint:fix
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                    TESTING & DEBUGGING                    ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: test test-ui test-coverage test-graphql-query debug-env
-
-# ✅ Run tests
-test:
-	@echo "$(BLUE)🧪 Running tests...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm run test
-
-test-ui:
-	@echo "$(BLUE)🧪 Running tests with UI...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm run test:ui
-
-test-coverage:
-	@echo "$(BLUE)📊 Running tests with coverage...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm run test:coverage
-
-# ✅ Test GraphQL query
-test-graphql-query:
-	@echo "$(BLUE)Testing GraphQL query...$(NC)"
-	@read -p "Enter query (e.g., {__typename}): " query; \
-	curl -X POST http://localhost:5000/graphql \
-		-H "Content-Type: application/json" \
-		-H "X-Allow-Introspection: true" \
-		-d "{\"query\":\"$$query\"}" | jq '.'
-
-# ✅ Debug environment
-debug-env:
-	@echo "$(BLUE)╔═══════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(BLUE)║          Environment Variables                             ║$(NC)"
-	@echo "$(BLUE)╚═══════════════════════════════════════════════════════════╝$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Frontend Container:$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) env | grep -E '^(VITE_|NODE_|npm_)' | sort
-	@echo ""
-	@echo "$(YELLOW)Backend Container:$(NC)"
-	@docker compose exec $(SERVICE_ASPNETCORE) env | grep -E '^(ASPNETCORE_|DATABASE_)' | sort
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                    PERFORMANCE & OPTIMIZATION             ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: analyze-bundle check-size optimize-images
-
-# ✅ Analyze bundle size
-analyze-bundle:
-	@echo "$(BLUE)📊 Analyzing bundle size...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm run build -- --mode analyze
-
-# ✅ Check frontend size
-check-size:
-	@echo "$(BLUE)📏 Checking build size...$(NC)"
-	@if [ -d "vite-ui/wwwroot/volume" ]; then \
-		du -sh vite-ui/wwwroot/volume; \
-		echo ""; \
-		echo "Largest files:"; \
-		find vite-ui/wwwroot/volume -type f -exec du -h {} + | sort -rh | head -10; \
+fix-line-endings:
+	@echo "$(YELLOW)🔧 Fixing line endings...$(NC)"
+	@if command -v dos2unix >/dev/null 2>&1; then \
+		find $(DIR_SCRIPTS) -type f -name "*.sh" -exec dos2unix {} \; ; \
+		echo "$(GREEN)✅ Line endings fixed$(NC)"; \
 	else \
-		echo "$(YELLOW)⚠️  Build directory not found. Run 'make build' first.$(NC)"; \
+		echo "$(YELLOW)⚠️  dos2unix not found, using sed...$(NC)"; \
+		find $(DIR_SCRIPTS) -type f -name "*.sh" -exec sed -i 's/\r$$//' {} \; ; \
+		echo "$(GREEN)✅ Line endings fixed$(NC)"; \
 	fi
+	@$(MAKE) setup-scripts
 
 # ╔═══════════════════════════════════════════════════════════╗
-# ║                    BACKUP & RESTORE                       ║
+# ║                   WINDOWS SUPPORT                         ║
 # ╚═══════════════════════════════════════════════════════════╝
 
-.PHONY: backup-db restore-db backup-volumes
+.PHONY: windows-quick-start windows-fix-line-endings
 
-# Backup database
-backup-db: check-password
-	@echo "$(BLUE)💾 Backing up database...$(NC)"
-	@mkdir -p ./backups
-	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S); \
-	PASSWORD=$$(cat $(FILE_PASSWORD)); \
-	docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
-		-S localhost -U sa -P "$$PASSWORD" \
-		-Q "BACKUP DATABASE [$(DATABASE_NAME)] TO DISK = '/var/opt/mssql/backups/backup_$$TIMESTAMP.bak'" -C \
-		&& echo "$(GREEN)✅ Backup created: backup_$$TIMESTAMP.bak$(NC)" \
-		|| echo "$(RED)❌ Backup failed$(NC)"
+windows-quick-start:
+	@echo "$(CYAN)🪟 Windows Quick Start$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1. Checking prerequisites...$(NC)"
+	@$(MAKE) check-tools
+	@echo ""
+	@echo "$(YELLOW)2. Fixing line endings...$(NC)"
+	@$(MAKE) windows-fix-line-endings
+	@echo ""
+	@echo "$(YELLOW)3. Starting setup...$(NC)"
+	@$(MAKE) first-run
 
-# Restore database
-restore-db: check-password
-	@echo "$(YELLOW)Available backups:$(NC)"
-	@docker exec sqlserver ls -lh /var/opt/mssql/backups/
-	@read -p "Enter backup filename: " backup; \
-	if [ -n "$$backup" ]; then \
-		PASSWORD=$$(cat $(FILE_PASSWORD)); \
-		docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd \
-			-S localhost -U sa -P "$$PASSWORD" \
-			-Q "RESTORE DATABASE [$(DATABASE_NAME)] FROM DISK = '/var/opt/mssql/backups/$$backup' WITH REPLACE" -C \
-			&& echo "$(GREEN)✅ Database restored from $$backup$(NC)" \
-			|| echo "$(RED)❌ Restore failed$(NC)"; \
-	else \
-		echo "$(RED)No backup specified$(NC)"; \
-	fi
+windows-fix-line-endings:
+	@echo "$(YELLOW)🔧 Fixing line endings (Windows)...$(NC)"
+	@powershell -Command "Get-ChildItem -Path $(DIR_SCRIPTS) -Filter *.sh -Recurse | ForEach-Object { \
+		$$content = Get-Content $$_.FullName -Raw; \
+		$$content = $$content -replace '`r`n', '`n'; \
+		Set-Content -Path $$_.FullName -Value $$content -NoNewline; \
+	}"
+	@echo "$(GREEN)✅ Line endings fixed$(NC)"
 
 # ╔═══════════════════════════════════════════════════════════╗
-# ║                    QUICK FIXES                            ║
+# ║                   SSH MANAGEMENT                          ║
 # ╚═══════════════════════════════════════════════════════════╝
 
-.PHONY: fix-postcss fix-tailwind fix-node-modules
+.PHONY: ssh-start ssh-stop ssh-restart ssh-logs ssh-status ssh-help
+.PHONY: ssh-keygen ssh-hardening
 
-# ✅ Fix PostCSS configuration
-fix-postcss:
-	@echo "$(BLUE)🔧 Fixing PostCSS configuration...$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) sh -c '\
-		cat > postcss.config.cjs << "EOF" \
-module.exports = { \
-    plugins: [ \
-        require("postcss-import"), \
-        require("tailwindcss"), \
-        require("autoprefixer"), \
-        require("cssnano")({ preset: "default" }), \
-    ], \
-}; \
-EOF \
-		&& echo "✅ PostCSS config fixed"'
-
-# ✅ Fix Tailwind configuration
-fix-tailwind:
-	@echo "$(BLUE)🔧 Validating Tailwind configuration...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npx tailwindcss --help > /dev/null 2>&1 \
-		&& echo "$(GREEN)✅ Tailwind OK$(NC)" \
-		|| echo "$(RED)❌ Tailwind issue detected$(NC)"
-
-# ✅ Reinstall node_modules
-fix-node-modules:
-	@echo "$(RED)⚠️  Reinstalling node_modules...$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) sh -c '\
-		rm -rf node_modules package-lock.json && \
-		npm install --legacy-peer-deps && \
-		echo "✅ node_modules reinstalled"'
-
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#             QUICK DEBUGGING & TROUBLESHOOTING
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-.PHONY: quick-check debug-graphql-full logs-graphql restart-graphql
-
-quick-check:
-	@echo "$(BLUE)🔍 Quick System Check$(NC)"
+ssh-start:
+	@echo "$(YELLOW)🔑 Starting SSH server...$(NC)"
+	@docker compose --profile ssh up -d openssh-server
+	@echo "$(GREEN)✅ SSH server started$(NC)"
 	@echo ""
-	@echo "$(YELLOW)1️⃣  Backend Health:$(NC)"
-	@curl -sf http://localhost:5000/health 2>/dev/null \
-		&& echo "  ✅ Backend OK" \
-		|| echo "  ❌ Backend DOWN"
+	@echo "$(CYAN)Connection Info:$(NC)"
+	@echo "  Host: localhost"
+	@echo "  Port: 2222"
+	@echo "  User: developer"
 	@echo ""
-	@echo "$(YELLOW)2️⃣  GraphQL Endpoint:$(NC)"
-	@curl -sf -X POST http://localhost:5000/graphql \
-		-H "Content-Type: application/json" \
-		-H "X-Allow-Introspection: true" \
-		-d '{"query":"query{__schema{queryType{name}}}"}' 2>/dev/null \
-		&& echo "  ✅ GraphQL OK" \
-		|| echo "  ❌ GraphQL FAILED"
-	@echo ""
-	@echo "$(YELLOW)3️⃣  Frontend Container:$(NC)"
-	@docker compose ps $(SERVICE_FRONTEND) | grep -q "Up" \
-		&& echo "  ✅ Frontend Running" \
-		|| echo "  ❌ Frontend Stopped"
-	@echo ""
-	@echo "$(YELLOW)4️⃣  Schema File:$(NC)"
-	@if docker compose exec -T $(SERVICE_FRONTEND) test -f apollo/schema.graphql 2>/dev/null; then \
-		if docker compose exec -T $(SERVICE_FRONTEND) grep -q "_placeholder" apollo/schema.graphql 2>/dev/null; then \
-			echo "  ⚠️  Placeholder Schema"; \
-		else \
-			lines=$$(docker compose exec -T $(SERVICE_FRONTEND) wc -l < apollo/schema.graphql 2>/dev/null | tr -d '[:space:]'); \
-			echo "  ✅ Real Schema ($$lines lines)"; \
-		fi; \
-	else \
-		echo "  ❌ Schema Missing"; \
-	fi
-	@echo ""
-	@echo "$(YELLOW)5️⃣  Generated Files:$(NC)"
-	@for file in graphql.ts index.ts gql.ts; do \
-		if docker compose exec -T $(SERVICE_FRONTEND) test -f "apollo/generated/$$file" 2>/dev/null; then \
-			size=$$(docker compose exec -T $(SERVICE_FRONTEND) wc -c < "apollo/generated/$$file" 2>/dev/null | tr -d '[:space:]'); \
-			if [ $$size -gt 1000 ]; then \
-				echo "  ✅ $$file"; \
-			else \
-				echo "  ⚠️  $$file (placeholder)"; \
-			fi; \
-		else \
-			echo "  ❌ $$file (missing)"; \
-		fi; \
-	done
+	@echo "$(YELLOW)Connect with:$(NC)"
+	@echo "  ssh -p 2222 developer@localhost"
 
-# ✅ Full GraphQL debugging
-debug-graphql-full:
-	@echo "$(BLUE)╔═══════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(BLUE)║          Full GraphQL Debug Report                        ║$(NC)"
-	@echo "$(BLUE)╚═══════════════════════════════════════════════════════════╝$(NC)"
-	@echo ""
-	@$(MAKE) quick-check
-	@echo ""
-	@echo "$(YELLOW)🔍 Backend Container Logs (last 30 lines):$(NC)"
-	@docker compose logs --tail=30 $(SERVICE_ASPNETCORE) | grep -i graphql || echo "  No GraphQL logs found"
-	@echo ""
-	@echo "$(YELLOW)🔍 Frontend Container Logs (last 30 lines):$(NC)"
-	@docker compose logs --tail=30 $(SERVICE_FRONTEND) | grep -E "(GraphQL|schema|codegen)" || echo "  No relevant logs found"
-	@echo ""
-	@echo "$(YELLOW)🔍 Environment Variables (Frontend):$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) env | grep -E "^(VITE_GRAPHQL|WAIT_FOR)" | sort
+ssh-stop:
+	@echo "$(YELLOW)🛑 Stopping SSH server...$(NC)"
+	@docker compose --profile ssh stop openssh-server
+	@echo "$(GREEN)✅ SSH server stopped$(NC)"
 
-# ✅ Live GraphQL logs
-logs-graphql:
-	@echo "$(YELLOW)📜 Following GraphQL-related logs...$(NC)"
-	@echo "$(CYAN)Press Ctrl+C to stop$(NC)"
-	@docker compose logs -f $(SERVICE_ASPNETCORE) $(SERVICE_FRONTEND) | grep -i --line-buffered "graphql\|schema\|codegen"
+ssh-restart:
+	@$(MAKE) ssh-stop
+	@$(MAKE) ssh-start
 
-# ✅ Restart frontend และ regenerate GraphQL
-restart-graphql:
-	@echo "$(YELLOW)🔄 Restarting frontend and regenerating GraphQL...$(NC)"
-	@docker compose restart $(SERVICE_FRONTEND)
-	@sleep 5
-	@$(MAKE) graphql-wait
-	@$(MAKE) graphql-download
-	@$(MAKE) graphql-generate
-	@echo "$(GREEN)✅ Complete!$(NC)"
-	@$(MAKE) quick-check
-
-# ✅ Force regenerate (แม้ backend ไม่พร้อม)
-graphql-force-placeholder:
-	@echo "$(YELLOW)📝 Forcing placeholder files...$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) npm run assure-files
-	@docker compose restart $(SERVICE_FRONTEND)
-	@echo "$(GREEN)✅ Placeholder files created and frontend restarted$(NC)"
-
-# ✅ Test GraphQL query ง่ายๆ
-graphql-query:
-	@echo "$(BLUE)Testing GraphQL with simple query...$(NC)"
-	@curl -X POST http://localhost:5000/graphql \
-		-H "Content-Type: application/json" \
-		-H "X-Allow-Introspection: true" \
-		-d '{"query":"query { __typename }"}' \
-		| jq '.' 2>/dev/null || cat
-
-# ✅ Download schema manually
-graphql-download-manual:
-	@echo "$(BLUE)Manually downloading schema...$(NC)"
-	@docker compose exec -T $(SERVICE_FRONTEND) bash -c '\
-		curl -X POST http://aspdotnetweb:5000/graphql \
-			-H "Content-Type: application/json" \
-			-H "X-Allow-Introspection: true" \
-			-d @- <<EOF | tee apollo/schema.json | jq . \
-{"query":"query IntrospectionQuery { __schema { queryType { name } mutationType { name } types { kind name description fields(includeDeprecated: true) { name description args { name description type { ...TypeRef } defaultValue } type { ...TypeRef } isDeprecated deprecationReason } inputFields { name description type { ...TypeRef } defaultValue } interfaces { ...TypeRef } enumValues(includeDeprecated: true) { name description isDeprecated deprecationReason } possibleTypes { ...TypeRef } } directives { name description locations args { name description type { ...TypeRef } defaultValue } } } } fragment TypeRef on __Type { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name } } } } } } } }"} \
-EOF'
-
-# ✅ One-liner: ทดสอบทุกอย่าง
-test-all: quick-check health graphql-test graphql-check
-
-# ✅ Emergency reset
-emergency-reset:
-	@echo "$(RED)⚠️  EMERGENCY RESET - This will restart everything!$(NC)"
-	@read -p "Continue? (yes/NO): " confirm; \
-	if [ "$$confirm" = "yes" ]; then \
-		echo "$(YELLOW)1. Stopping all services...$(NC)"; \
-		docker compose down; \
-		echo "$(YELLOW)2. Cleaning caches...$(NC)"; \
-		docker compose exec -T $(SERVICE_FRONTEND) rm -rf node_modules/.cache apollo/generated/* 2>/dev/null || true; \
-		echo "$(YELLOW)3. Starting services...$(NC)"; \
-		docker compose up -d; \
-		echo "$(YELLOW)4. Waiting for health...$(NC)"; \
-		sleep 30; \
-		$(MAKE) wait-for-health; \
-		echo "$(YELLOW)5. Regenerating GraphQL...$(NC)"; \
-		$(MAKE) graphql-setup; \
-		echo "$(GREEN)✅ Emergency reset complete!$(NC)"; \
-		$(MAKE) quick-check; \
-	else \
-		echo "Cancelled."; \
-	fi
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                    DOCUMENTATION                          ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: documents-api documents-graphql
-
-# ✅ Generate API documentation
-documents-api:
-	@echo "$(BLUE)📚 Generating API documentation...$(NC)"
-	@docker compose exec $(SERVICE_FRONTEND) npm run generate-all
-
-# ✅ View GraphQL schema documentation
-documents-graphql:
-	@echo "$(BLUE)📖 GraphQL Schema:$(NC)"
-	@echo ""
-	@docker compose exec -T $(SERVICE_FRONTEND) cat apollo/schema.graphql | head -n 50
-	@echo ""
-	@echo "$(YELLOW)Full schema: http://localhost:5000/graphql$(NC)"
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                    FIREWALL MANAGEMENT                    ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: firewall-enable firewall-disable firewall-status firewall-sync firewall-ssh firewall-ssh-status
-
-# Enable firewall rules
-firewall-enable:
-	@echo "$(CYAN)🔥 Enabling firewall rules...$(NC)"
-	@if command -v firewall-cmd >/dev/null 2>&1; then \
-        echo "$(YELLOW)Configuring firewalld (Linux)...$(NC)"; \
-        sudo bash scripts/firewall/linux/firewalld-setup.sh enable development; \
-        sudo bash scripts/firewall/linux/selinux-setup.sh enable; \
-    else \
-        echo "$(YELLOW)Linux firewall tools not found$(NC)"; \
-    fi
-	@echo "$(GREEN)✅ Firewall configured$(NC)"
-
-# Disable firewall
-firewall-disable:
-	@echo "$(YELLOW)⏸️  Disabling firewall...$(NC)"
-	@if command -v firewall-cmd >/dev/null 2>&1; then \
-        sudo systemctl stop firewalld; \
-    fi
-
-# Show firewall status
-firewall-status:
-	@echo "$(CYAN)📊 Firewall Status$(NC)"
-	@if command -v firewall-cmd >/dev/null 2>&1; then \
-        sudo firewall-cmd --list-all; \
-        sudo semanage port -l | grep http_port_t; \
-    else \
-        echo "$(YELLOW)Firewall not configured$(NC)"; \
-    fi
-
-# Sync firewall across platforms (if using WSL2)
-firewall-sync:
-	@echo "$(CYAN)🔄 Syncing firewall rules...$(NC)"
-	@bash scripts/firewall/linux/firewalld-setup.sh enable all
-
-firewall-ssh:
-	@echo "$(CYAN)🔐 Configuring SSH Firewall...$(NC)"
-	@powershell -ExecutionPolicy Bypass -File scripts/firewall/windows/openssh-firewall.ps1 -Action Enable -SecurityLevel Medium
-
-firewall-ssh-status:
-	@echo "$(CYAN)📊 SSH Firewall Status$(NC)"
-	@powershell -ExecutionPolicy Bypass -File scripts/firewall/windows/openssh-firewall.ps1 -Action Status
-
-# ╔═══════════════════════════════════════════════════════════╗
-# ║                    SSH MANAGEMENT                         ║
-# ╚═══════════════════════════════════════════════════════════╝
-
-.PHONY: ssh-install ssh-keygen ssh-status ssh-harden
-
-ssh-install:
-	@echo "$(CYAN)📦 Installing OpenSSH...$(NC)"
-	@sudo bash scripts/setup/install-openssh.sh
-
-ssh-keygen:
-	@echo "$(CYAN)🔑 Generating SSH keys...$(NC)"
-	@bash scripts/setup/manage-ssh-keys.sh generate
+ssh-logs:
+	@docker compose logs -f openssh-server
 
 ssh-status:
 	@echo "$(CYAN)📊 SSH Status$(NC)"
-	@sudo systemctl status sshd --no-pager
-	@echo "\n$(YELLOW)Open Ports:$(NC)"
-	@sudo ss -tlnp | grep sshd
+	@docker ps -a --filter "name=openssh" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-ssh-harden:
-	@echo "$(CYAN)🔒 Hardening SSH...$(NC)"
-	@sudo bash scripts/setup/ssh-hardening.sh
+ssh-help:
+	@echo "$(CYAN)SSH Commands:$(NC)"
+	@echo "  make ssh-start     - Start SSH server"
+	@echo "  make ssh-stop      - Stop SSH server"
+	@echo "  make ssh-restart   - Restart SSH server"
+	@echo "  make ssh-logs      - View SSH logs"
+	@echo "  make ssh-status    - Show SSH status"
 
-# Backward compatibility
+ssh-keygen:
+	@echo "$(YELLOW)🔑 Generating SSH keys...$(NC)"
+	@mkdir -p ~/.ssh
+	@ssh-keygen -t ed25519 -C "developer@$(PROJECT_NAME)" -f ~/.ssh/$(PROJECT_NAME)
+	@echo "$(GREEN)✅ SSH keys generated$(NC)"
+	@echo ""
+	@echo "$(CYAN)Add this to your authorized_keys:$(NC)"
+	@cat ~/.ssh/$(PROJECT_NAME).pub
+
+ssh-hardening:
+	@echo "$(YELLOW)🔒 Setting up SSH hardening...$(NC)"
+	@mkdir -p scripts/setup
+	@cp templates/ssh-hardening.sh scripts/setup/
+	@chmod +x scripts/setup/ssh-hardening.sh
+	@echo "$(GREEN)✅ SSH hardening script created$(NC)"
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                   DEBUGGING & UTILITIES                   ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: debug debug-env check-tools open open-swagger open-graphql
+
+debug:
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(CYAN)                   Debug Information                       $(NC)"
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "$(YELLOW)System:$(NC)"
+	@echo "  OS: $(UNAME_S)"
+	@echo "  Project: $(PROJECT_NAME)"
+	@echo ""
+	@echo "$(YELLOW)Timeouts:$(NC)"
+	@echo "  DB: $(TIMEOUT_DB)s"
+	@echo "  GraphQL: $(TIMEOUT_GRAPHQL)s"
+	@echo "  Health: $(TIMEOUT_HEALTH)s"
+	@echo ""
+	@$(MAKE) status
+	@echo ""
+	@$(MAKE) health
+
+debug-env:
+	@echo "$(CYAN)Environment Variables$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Frontend:$(NC)"
+	@docker compose exec -T $(SERVICE_FRONTEND) env | grep -E '^(VITE_|NODE_)' | sort
+	@echo ""
+	@echo "$(YELLOW)Backend:$(NC)"
+	@docker compose exec -T $(SERVICE_ASPNETCORE) env | grep -E '^(ASPNETCORE_|DATABASE_)' | sort
+
+check-tools:
+	@echo "$(YELLOW)Checking Host Tools...$(NC)"
+	@for tool in bash docker make curl; do \
+		if command -v $$tool >/dev/null 2>&1; then \
+			echo "  ✅ $$tool"; \
+		else \
+			echo "  ❌ $$tool - MISSING"; \
+		fi; \
+	done
+	@for tool in dos2unix jq; do \
+		if command -v $$tool >/dev/null 2>&1; then \
+			echo "  ✅ $$tool (optional)"; \
+		else \
+			echo "  ⚠️  $$tool (optional)"; \
+		fi; \
+	done
+
+open:
+	@$(OPEN_CMD) http://localhost:5173
+
+open-swagger:
+	@$(OPEN_CMD) http://localhost:5000/swagger
+
+open-graphql:
+	@$(OPEN_CMD) http://localhost:5000/graphql
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                  EMERGENCY & QUICK FIXES                  ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: emergency-reset quick-fix
+
+emergency-reset:
+	@echo "$(RED)⚠️  EMERGENCY RESET$(NC)"
+	@read -p "This will restart everything. Continue? (yes/NO): " confirm; \
+	[ "$$confirm" = "yes" ] || exit 0
+	@echo "$(YELLOW)1. Stopping services...$(NC)"
+	@docker compose down
+	@echo "$(YELLOW)2. Cleaning caches...$(NC)"
+	@docker compose exec -T $(SERVICE_FRONTEND) rm -rf node_modules/.cache apollo/generated/* 2>/dev/null || true
+	@echo "$(YELLOW)3. Starting services...$(NC)"
+	@docker compose up -d
+	@echo "$(YELLOW)4. Waiting for health...$(NC)"
+	@sleep 30
+	@$(MAKE) wait-health
+	@echo "$(YELLOW)5. Setting up GraphQL...$(NC)"
+	@$(MAKE) graphql-setup
+	@echo "$(GREEN)✅ Emergency reset complete$(NC)"
+	@$(MAKE) quick
+
+quick-fix: fix-line-endings frontend-build frontend-restart
+	@echo "$(GREEN)✅ Quick fix applied$(NC)"
+	@$(MAKE) frontend-logs
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║                   CONFIGURATION TOOLS                     ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+.PHONY: check-app-url assign-app-url show-env test-app-url
+
+check-app-url:
+	@echo "$(CYAN)🔍 Checking APP_URL Configuration$(NC)"
+	@echo ""
+	@if [ -f .env ]; then \
+		APP_URL=$$(grep -E "^APP_URL=" .env | cut -d'=' -f2); \
+		FRONTEND_URL=$$(grep -E "^FRONTEND_URL=" .env | cut -d'=' -f2); \
+		VITE_APP_URL=$$(grep -E "^VITE_APP_URL=" .env | cut -d'=' -f2); \
+		echo "  APP_URL:       $$APP_URL"; \
+		echo "  FRONTEND_URL:  $$FRONTEND_URL"; \
+		echo "  VITE_APP_URL:  $$VITE_APP_URL"; \
+		if [ -z "$$APP_URL" ]; then \
+			echo "$(RED)  ⚠️  APP_URL not set!$(NC)"; \
+		else \
+			echo "$(GREEN)  ✅ APP_URL configured$(NC)"; \
+		fi; \
+	else \
+		echo "$(RED)❌ .env file not found$(NC)"; \
+	fi
+
+assign-app-url:
+	@echo "$(CYAN)🔧 Setting APP_URL$(NC)"
+	@read -p "Enter APP_URL (e.g., http://localhost:8080): " url; \
+	if [ -n "$$url" ]; then \
+		if [ -f .env ]; then \
+			$(SED_INPLACE) "s|^APP_URL=.*|APP_URL=$$url|" .env; \
+			$(SED_INPLACE) "s|^FRONTEND_URL=.*|FRONTEND_URL=$$url|" .env; \
+			$(SED_INPLACE) "s|^VITE_APP_URL=.*|VITE_APP_URL=$$url|" .env; \
+			echo "$(GREEN)✅ APP_URL updated to: $$url$(NC)"; \
+		else \
+			echo "$(RED)❌ .env file not found$(NC)"; \
+		fi; \
+	fi
+
+show-env:
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(CYAN)            Environment Configuration                      $(NC)"
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "$(YELLOW)📍 Main URLs:$(NC)"
+	@if [ -f .env ]; then \
+		grep -E "^(APP_URL|FRONTEND_URL|VITE_APP_URL)=" .env | while read line; do \
+			echo "  $$line"; \
+		done; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)🔗 Internal URLs (Docker):$(NC)"
+	@if [ -f .env ]; then \
+		grep -E "^VITE_(API_URL|GRAPHQL_ENDPOINT|GRPC_ENDPOINT)=" .env | while read line; do \
+			echo "  $$line"; \
+		done; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)🌐 Public URLs (Browser):$(NC)"
+	@if [ -f .env ]; then \
+		grep -E "^VITE_PUBLIC_" .env | while read line; do \
+			echo "  $$line"; \
+		done; \
+	fi
+
+test-app-url:
+	@echo "$(CYAN)🧪 Testing APP_URL$(NC)"
+	@if [ -f .env ]; then \
+		APP_URL=$$(grep -E "^APP_URL=" .env | cut -d'=' -f2); \
+		echo "  Testing: $$APP_URL"; \
+		if curl -sf "$$APP_URL/health" >/dev/null 2>&1; then \
+			echo "$(GREEN)  ✅ URL accessible$(NC)"; \
+		else \
+			echo "$(YELLOW)  ⚠️  URL not accessible (service may not be running)$(NC)"; \
+		fi; \
+	fi
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║              BACKWARD COMPATIBILITY ALIASES               ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+# Aliases เพื่อรองรับคำสั่งเก่า
 .PHONY: wait-for-db wait-for-graphql test-db test-graphql
-.PHONY: generate-graphql-safe check-graphql fix-all-graphql
+.PHONY: generate-graphql-safe check-graphql fix-all-graphql migration
+.PHONY: graphql-fix restart-docker
 
 wait-for-db: db-wait
 wait-for-graphql: graphql-wait
@@ -1165,5 +1395,15 @@ test-db: db-test
 test-graphql: graphql-test
 generate-graphql-safe: graphql-generate
 check-graphql: graphql-check
-fix-all-graphql: graphql-fix
-migration: db-migration
+fix-all-graphql: graphql-setup
+migration: db-migrate
+graphql-fix: graphql-setup
+restart-docker: restart
+
+# Aliases ใหม่สำหรับ migration
+.PHONY: ef-first ef-add ef-apply ef-fix ef-status
+ef-first: migration-first
+ef-add: migration-add
+ef-apply: migration-apply
+ef-fix: migration-fix
+ef-status: migration-status

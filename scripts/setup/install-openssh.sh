@@ -194,8 +194,8 @@ main() {
     check_root
     
     echo -e "${CYAN}╔═══════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║  OpenSSH Server Installation         ║${NC}"
-    echo -e "${CYAN}║  for swu-rssnews project             ║${NC}"
+    echo -e "${CYAN}║   OpenSSH Server Installation         ║${NC}"
+    echo -e "${CYAN}║   for swu-rssnews project             ║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════╝${NC}\n"
     
     install_openssh

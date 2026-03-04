@@ -7,28 +7,31 @@ namespace rssnews.GraphQL.Types
     {
         protected override void Configure(IObjectTypeDescriptor<Item> descriptor)
         {
-            descriptor.Name("ItemObject"); // กำหนดชื่อของ GraphQL Type, ควรเป็นชื่อที่ชัดเจน
+            // ✅ เปลี่ยนชื่อให้ตรงกับ Model หรือใช้ชื่อที่สื่อความหมาย
+            descriptor.Name("Item");
 
             descriptor.Field(it => it.ItemID)
-                .Type<NonNullType<StringType>>() // ระบุ HotChocolate Type
+                .Type<NonNullType<StringType>>()
                 .Description("The ID of the RSS item.")
                 .Name("itemID");
 
             descriptor.Field(it => it.Title)
                 .Type<NonNullType<StringType>>()
-                .Description("The title of the RSS item.");
+                .Description("The title of the RSS item.")
+                .Name("title");
 
             descriptor.Field(it => it.Link)
                 .Type<NonNullType<StringType>>()
-                .Description("The link to the RSS item content.");
+                .Description("The link to the RSS item content.")
+                .Name("link");
 
             descriptor.Field(it => it.Description)
                 .Type<NonNullType<StringType>>()
-                .Description("The description of the RSS item.");
+                .Description("The description of the RSS item.")
+                .Name("description");
 
-            // ใช้ HotChocolate's DateTimeType
             descriptor.Field(it => it.PublishedDate)
-                .Type<NonNullType<DateTimeType>>() // HotChocolate มี DateTimeType ของตัวเอง
+                .Type<NonNullType<DateTimeType>>()
                 .Description("The publication date of the RSS item.")
                 .Name("publishedDate");
 
@@ -42,14 +45,16 @@ namespace rssnews.GraphQL.Types
                 .Description("The ID of the author.")
                 .Name("authorBuasriID");
 
+            // ✅ แก้ไขตรงนี้: ใช้ CategoryObject โดยตรง ไม่ต้องครอบ ObjectType
             descriptor.Field("category")
-                .Type<ObjectType<CategoryObject>>()
-                .ResolveWith<ItemResolvers>(t => t.GetCategory(default!, default!))
+                .Type<CategoryObject>()  // ✅ ถูกต้อง
+                .ResolveWith<ItemResolvers>(r => r.GetCategory(default!, default!))
                 .Description("The category of the RSS item.");
 
+            // ✅ แก้ไขตรงนี้: ใช้ AuthorObject โดยตรง
             descriptor.Field("author")
-                .Type<ObjectType<AuthorObject>>()
-                .ResolveWith<ItemResolvers>(t => t.GetAuthor(default!, default!))
+                .Type<AuthorObject>()  // ✅ ถูกต้อง
+                .ResolveWith<ItemResolvers>(r => r.GetAuthor(default!, default!))
                 .Description("The author of the RSS item.");
         }
     }

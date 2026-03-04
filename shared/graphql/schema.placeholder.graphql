@@ -1,0 +1,15 @@
+# Placeholder schema - backend not ready yet
+# This file will be replaced when GraphQL endpoint is available
+
+type Query {
+  _placeholder: String @deprecated(reason: "Placeholder - waiting for backend")
+}
+
+type Mutation {
+  _placeholder: String @deprecated(reason: "Placeholder - waiting for backend")
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

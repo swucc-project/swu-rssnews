@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -9,10 +8,15 @@ namespace rssnews.Models
     {
         [Column("CategoryID")]
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int CategoryID { get; set; }
+
         [Column("CategoryName")]
+        [Required]
+        [MaxLength(200)]
         public string CategoryName { get; set; } = "";
 
-        public List<Item> Items { get; set; } = new List<Item>();
+        // ✅ Navigation property - ใช้ virtual สำหรับ lazy loading
+        public virtual ICollection<Item> Items { get; set; } = [];
     }
 }

@@ -1,81 +1,104 @@
 # performance-test.ps1
-# Simple performance testing
+# Concurrent HTTP performance testing
 
 param(
-    [Parameter(Mandatory=$false)]
     [string]$Url = "http://localhost:8080",
-    [Parameter(Mandatory=$false)]
     [int]$Requests = 100,
-    [Parameter(Mandatory=$false)]
-    [int]$Concurrency = 10
+    [int]$Concurrency = 10,
+    [string]$Method = "GET",
+    [string]$Body,
+    [hashtable]$Headers
 )
 
-Write-Host "`n⚡ Performance Test - swu-rssnews" -ForegroundColor Cyan
+$ProjectName = "swu-rssnews"
+
+Write-Host "`n⚡ Performance Test - $ProjectName" -ForegroundColor Cyan
 Write-Host "=" * 60
-Write-Host "URL: $Url" -ForegroundColor Yellow
-Write-Host "Requests: $Requests" -ForegroundColor Yellow
-Write-Host "Concurrency: $Concurrency" -ForegroundColor Yellow
+Write-Host "URL: $Url"
+Write-Host "Method: $Method"
+Write-Host "Requests: $Requests"
+Write-Host "Concurrency: $Concurrency"
 Write-Host "=" * 60
 
-$results = @()
-$startTime = Get-Date
+$client = [System.Net.Http.HttpClient]::new()
+$client.Timeout = [TimeSpan]::FromSeconds(30)
 
-Write-Host "`n🚀 Running tests..." -ForegroundColor Cyan
-
-# Run requests
-for ($i = 0; $i -lt $Requests; $i++) {
-    $requestStart = Get-Date
-    try {
-        $response = Invoke-WebRequest -Uri $Url -TimeoutSec 30 -UseBasicParsing
-        $requestEnd = Get-Date
-        $duration = ($requestEnd - $requestStart).TotalMilliseconds
-        
-        $results += [PSCustomObject]@{
-            RequestNumber = $i + 1
-            StatusCode = $response.StatusCode
-            Duration = $duration
-            Success = $true
-        }
-        
-        Write-Progress -Activity "Testing" -Status "Request $($i + 1)/$Requests" -PercentComplete (($i + 1) / $Requests * 100)
-    } catch {
-        $requestEnd = Get-Date
-        $duration = ($requestEnd - $requestStart).TotalMilliseconds
-        
-        $results += [PSCustomObject]@{
-            RequestNumber = $i + 1
-            StatusCode = 0
-            Duration = $duration
-            Success = $false
-        }
+if ($Headers) {
+    foreach ($key in $Headers.Keys) {
+        $client.DefaultRequestHeaders.Add($key, $Headers[$key])
     }
 }
 
-$endTime = Get-Date
-$totalDuration = ($endTime - $startTime).TotalSeconds
+$results = [System.Collections.Concurrent.ConcurrentBag[object]]::new()
+$startTime = Get-Date
 
-# Calculate statistics
-$successfulRequests = ($results | Where-Object { $_.Success }).Count
-$failedRequests = $Requests - $successfulRequests
-$avgDuration = ($results | Measure-Object -Property Duration -Average).Average
-$minDuration = ($results | Measure-Object -Property Duration -Minimum).Minimum
-$maxDuration = ($results | Measure-Object -Property Duration -Maximum).Maximum
+Write-Host "`n🚀 Running concurrent test..." -ForegroundColor Cyan
+
+$jobs = @()
+$requestsPerWorker = [math]::Ceiling($Requests / $Concurrency)
+
+for ($w = 1; $w -le $Concurrency; $w++) {
+    $jobs += Start-ThreadJob -ScriptBlock {
+        param($client, $Url, $Method, $Body, $Count, $results)
+
+        for ($i = 1; $i -le $Count; $i++) {
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            try {
+                if ($Method -eq "POST") {
+                    $content = $Body ? [System.Net.Http.StringContent]::new($Body, [Text.Encoding]::UTF8, "application/json") : $null
+                    $resp = $client.PostAsync($Url, $content).Result
+                } else {
+                    $resp = $client.GetAsync($Url).Result
+                }
+
+                $sw.Stop()
+                $results.Add([pscustomobject]@{
+                    Success  = $resp.IsSuccessStatusCode
+                    Status   = [int]$resp.StatusCode
+                    Duration = $sw.Elapsed.TotalMilliseconds
+                })
+            } catch {
+                $sw.Stop()
+                $results.Add([pscustomobject]@{
+                    Success  = $false
+                    Status   = 0
+                    Duration = $sw.Elapsed.TotalMilliseconds
+                })
+            }
+        }
+    } -ArgumentList $client, $Url, $Method, $Body, $requestsPerWorker, $results
+}
+
+$jobs | Wait-Job | Remove-Job
+
+$endTime = Get-Date
+$totalSeconds = ($endTime - $startTime).TotalSeconds
+
+$success = $results | Where-Object Success
+$fail = $results.Count - $success.Count
+$durations = $results.Duration | Sort-Object
+
+function Percentile($p) {
+    $index = [math]::Ceiling($p / 100 * $durations.Count) - 1
+    return $durations[$index]
+}
 
 Write-Host "`n" -NoNewline
 Write-Host "=" * 60 -ForegroundColor Green
 Write-Host "📊 Test Results" -ForegroundColor Green
 Write-Host "=" * 60 -ForegroundColor Green
 
-Write-Host "`nOverall:" -ForegroundColor Cyan
-Write-Host "  Total Requests:      $Requests" -ForegroundColor White
-Write-Host "  Successful:          $successfulRequests" -ForegroundColor Green
-Write-Host "  Failed:              $failedRequests" -ForegroundColor $(if ($failedRequests -gt 0) { "Red" } else { "Green" })
-Write-Host "  Total Duration:      $([math]::Round($totalDuration, 2))s" -ForegroundColor White
-Write-Host "  Requests/Second:     $([math]::Round($Requests / $totalDuration, 2))" -ForegroundColor White
+Write-Host "Total Requests:      $($results.Count)"
+Write-Host "Successful:          $($success.Count)" -ForegroundColor Green
+Write-Host "Failed:              $fail" -ForegroundColor $(if ($fail -gt 0) { "Red" } else { "Green" })
+Write-Host "Total Time:          $([math]::Round($totalSeconds,2))s"
+Write-Host "Requests/sec:        $([math]::Round($results.Count / $totalSeconds,2))"
 
-Write-Host "`nResponse Times:" -ForegroundColor Cyan
-Write-Host "  Average:             $([math]::Round($avgDuration, 2))ms" -ForegroundColor White
-Write-Host "  Minimum:             $([math]::Round($minDuration, 2))ms" -ForegroundColor Green
-Write-Host "  Maximum:             $([math]::Round($maxDuration, 2))ms" -ForegroundColor Yellow
+Write-Host "`nResponse Time (ms):" -ForegroundColor Cyan
+Write-Host "  Avg:               $([math]::Round(($durations | Measure-Object -Average).Average,2))"
+Write-Host "  Min:               $([math]::Round($durations[0],2))"
+Write-Host "  Max:               $([math]::Round($durations[-1],2))"
+Write-Host "  P95:               $([math]::Round((Percentile 95),2))"
+Write-Host "  P99:               $([math]::Round((Percentile 99),2))"
 
-Write-Host "`n"
+Write-Host "`n✅ Test completed.`n" -ForegroundColor Green

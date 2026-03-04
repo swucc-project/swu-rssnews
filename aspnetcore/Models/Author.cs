@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -9,12 +8,17 @@ namespace rssnews.Models
     {
         [Column("AuthorID")]
         [Key]
+        [MaxLength(50)]
         public string AuthorID { get; set; } = "";
+
         [Column("FirstName")]
+        [MaxLength(100)]
         public string FirstName { get; set; } = "";
+
         [Column("LastName")]
+        [MaxLength(100)]
         public string LastName { get; set; } = "";
 
-        public List<Item> Items { get; set; } = new List<Item>();
+        public virtual ICollection<Item> Items { get; set; } = [];
     }
 }

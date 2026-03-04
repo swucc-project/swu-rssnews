@@ -12,11 +12,11 @@ NC='\033[0m'
 GRAPHQL_ENDPOINT="${GRAPHQL_ENDPOINT:-http://aspdotnetweb:5000/graphql}"
 SCHEMA_FILE="${SCHEMA_FILE:-apollo/schema.graphql}"
 GENERATED_DIR="${GENERATED_DIR:-apollo/generated}"
-MAX_RETRIES="${MAX_RETRIES:-30}"
+MAX_RETRIES="${MAX_RETRIES:-60}"
 RETRY_DELAY="${RETRY_DELAY:-5}"
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║          GraphQL Setup Script                              ║${NC}"
+echo -e "${BLUE}║          GraphQL Setup Script v3.0                         ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -40,182 +40,10 @@ log_error() {
     echo -e "${RED}❌${NC} $1"
 }
 
-# สร้าง placeholder fragments
+# Create placeholder files using the improved script
 create_placeholders() {
     log_info "Creating placeholder files..."
-    
-    mkdir -p "$GENERATED_DIR"
-    
-    # ✅ fragments.ts with types
-    cat > "$GENERATED_DIR/fragments.ts" << 'EOF'
-import gql from 'graphql-tag';
-
-export const RSS_ITEM_FIELDS = gql`
-  fragment RssItemFields on RssItem {
-    itemID
-    title
-    link
-    description
-    publishedDate
-    category {
-      categoryID
-      categoryName
-    }
-    author {
-      buasriID
-      firstName
-      lastName
-    }
-  }
-`;
-
-export const CATEGORY_FIELDS = gql`
-  fragment CategoryFields on Category {
-    categoryID
-    categoryName
-  }
-`;
-
-export const AUTHOR_FIELDS = gql`
-  fragment AuthorFields on Author {
-    buasriID
-    firstName
-    lastName
-  }
-`;
-
-export type RssItemFieldsFragment = {
-  itemID: string;
-  title: string;
-  link: string;
-  description?: string | null;
-  publishedDate: string;
-  category?: { categoryID: number; categoryName: string } | null;
-  author?: { buasriID: string; firstName: string; lastName: string } | null;
-};
-
-export type CategoryFieldsFragment = {
-  categoryID: number;
-  categoryName: string;
-};
-
-export type AuthorFieldsFragment = {
-  buasriID: string;
-  firstName: string;
-  lastName: string;
-};
-EOF
-    
-    # graphql.ts
-    cat > "$GENERATED_DIR/graphql.ts" << 'EOF'
-/* eslint-disable */
-// Auto-generated placeholder
-export type Maybe<T> = T | null;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-
-export type Scalars = {
-  ID: string;
-  String: string;
-  Boolean: boolean;
-  Int: number;
-  Float: number;
-  DateTime: string;
-  Date: string;
-  Decimal: number;
-  Long: number;
-  UUID: string;
-};
-
-export const documents = {};
-EOF
-
-    # index.ts
-    cat > "$GENERATED_DIR/index.ts" << 'EOF'
-/* eslint-disable */
-export * from './graphql';
-export * from './gql';
-export * from './fragments';
-export type { Maybe, Exact, Scalars } from './graphql';
-EOF
-
-    # gql.ts  
-    cat > "$GENERATED_DIR/gql.ts" << 'EOF'
-/* eslint-disable */
-import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
-
-export type DocumentType<TDocumentNode extends DocumentNode<any, any>> = 
-  TDocumentNode extends DocumentNode<infer TType, any> ? TType : never;
-
-export function gql(source: string): unknown;
-export function gql(source: TemplateStringsArray, ...args: any[]): unknown;
-export function gql(source: string | TemplateStringsArray, ...args: any[]): unknown {
-  const documentSource = typeof source === 'string' 
-    ? source 
-    : source.reduce((acc, str, i) => acc + str + (args[i] || ''), '');
-  
-  return {
-    kind: 'Document',
-    definitions: [],
-    loc: { start: 0, end: documentSource.length },
-    __meta__: { hash: 'placeholder' }
-  } as any;
-}
-
-export default gql;
-EOF
-
-    # fragment-masking.ts
-    cat > "$GENERATED_DIR/fragment-masking.ts" << 'EOF'
-/* eslint-disable */
-import { DocumentNode } from 'graphql';
-
-export type FragmentType<TDocumentType extends DocumentNode<any, any>> = 
-  TDocumentType extends DocumentNode<infer TType, any>
-    ? TType extends { ' $fragmentName'?: infer TKey }
-      ? TKey extends string
-        ? { ' $fragmentRefs'?: { [key in TKey]: TType } }
-        : never
-      : never
-    : never;
-
-export function useFragment<TType>(
-  _documentNode: DocumentNode<TType, any>,
-  fragmentType: FragmentType<DocumentNode<TType, any>>
-): TType;
-
-export function useFragment<TType>(
-  _documentNode: DocumentNode<TType, any>,
-  fragmentType: FragmentType<DocumentNode<TType, any>> | null | undefined
-): TType | null | undefined;
-
-export function useFragment<TType>(
-  _documentNode: DocumentNode<TType, any>,
-  fragmentType: ReadonlyArray<FragmentType<DocumentNode<TType, any>>>
-): ReadonlyArray<TType>;
-
-export function useFragment<TType>(
-  _documentNode: DocumentNode<TType, any>,
-  fragmentType: ReadonlyArray<FragmentType<DocumentNode<TType, any>>> | null | undefined
-): ReadonlyArray<TType> | null | undefined;
-
-export function useFragment<TType>(
-  _documentNode: DocumentNode<TType, any>,
-  fragmentType: FragmentType<DocumentNode<TType, any>> | ReadonlyArray<FragmentType<DocumentNode<TType, any>>> | null | undefined
-): TType | ReadonlyArray<TType> | null | undefined {
-  return fragmentType as any;
-}
-
-export function makeFragmentData<TType, TDocumentType extends DocumentNode<TType, any>>(
-  data: TType,
-  _documentNode: TDocumentType
-): FragmentType<TDocumentType> {
-  return data as FragmentType<TDocumentType>;
-}
-EOF
-
-    # introspection.json
-    echo '{"possibleTypes":{}}' > "$GENERATED_DIR/introspection.json"
-    
+    node scripts/assure-graphql-files.mjs
     log_success "Placeholder files created"
 }
 
@@ -242,23 +70,21 @@ wait_for_graphql() {
     return 1
 }
 
-# Download schema - ✅ แก้ไขให้ทำงานได้จริง
+# Download schema
 download_schema() {
     log_info "Downloading GraphQL schema..."
     
-    # ✅ ลองใช้ Apollo Rover ก่อน (ถ้ามี)
+    # Method 1: Try Apollo Rover
     if command -v rover &> /dev/null; then
         log_info "Trying with Apollo Rover..."
         
-        # ✅ ใช้ direct endpoint URL
         if rover graph introspect "$GRAPHQL_ENDPOINT" \
             --header "X-Allow-Introspection:true" \
             > "$SCHEMA_FILE.tmp" 2>/dev/null; then
             
             # Validate schema
             if grep -q "type Query" "$SCHEMA_FILE.tmp" && \
-               ! grep -q "error" "$SCHEMA_FILE.tmp" && \
-               ! grep -q "_placeholder" "$SCHEMA_FILE.tmp"; then
+               ! grep -q "error" "$SCHEMA_FILE.tmp"; then
                 mv "$SCHEMA_FILE.tmp" "$SCHEMA_FILE"
                 log_success "Schema downloaded via Rover"
                 return 0
@@ -267,55 +93,52 @@ download_schema() {
         rm -f "$SCHEMA_FILE.tmp"
     fi
     
-    # ✅ Fallback: ใช้ graphql-codegen CLI
-    log_info "Trying with graphql-codegen..."
+    # Method 2: Try get-graphql-schema
+    log_info "Trying with get-graphql-schema..."
     
     if npx -y get-graphql-schema "$GRAPHQL_ENDPOINT" \
         --header "X-Allow-Introspection=true" \
         > "$SCHEMA_FILE.tmp" 2>/dev/null; then
         
-        if grep -q "type Query" "$SCHEMA_FILE.tmp"; then
+        if grep -q "type Query" "$SCHEMA_FILE.tmp" && \
+           [ $(wc -c < "$SCHEMA_FILE.tmp") -gt 500 ]; then
             mv "$SCHEMA_FILE.tmp" "$SCHEMA_FILE"
-            log_success "Schema downloaded via graphql-codegen"
+            log_success "Schema downloaded via get-graphql-schema"
             return 0
         fi
     fi
     rm -f "$SCHEMA_FILE.tmp"
     
-    # ✅ Last resort: Introspection query
-    log_info "Trying introspection query..."
+    # Method 3: Try direct introspection
+    log_info "Trying direct introspection..."
     
-    INTROSPECTION_QUERY='{"query":"query IntrospectionQuery { __schema { queryType { name } mutationType { name } types { kind name description fields(includeDeprecated: true) { name description args { name description type { ...TypeRef } defaultValue } type { ...TypeRef } isDeprecated deprecationReason } inputFields { ...InputValue } interfaces { ...TypeRef } enumValues(includeDeprecated: true) { name description isDeprecated deprecationReason } possibleTypes { ...TypeRef } } directives { name description locations args { ...InputValue } } } } fragment FullType on __Type { kind name description fields(includeDeprecated: true) { name description args { ...InputValue } type { ...TypeRef } isDeprecated deprecationReason } inputFields { ...InputValue } interfaces { ...TypeRef } enumValues(includeDeprecated: true) { name description isDeprecated deprecationReason } possibleTypes { ...TypeRef } } fragment InputValue on __InputValue { name description type { ...TypeRef } defaultValue } fragment TypeRef on __Type { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name } } } } } } } }"}'
+    # Simplified introspection query
+    INTROSPECTION_QUERY='query IntrospectionQuery{__schema{queryType{name}mutationType{name}subscriptionType{name}types{kind name description fields(includeDeprecated:true){name description args{name description type{...TypeRef}defaultValue}type{...TypeRef}isDeprecated deprecationReason}inputFields{...InputValue}interfaces{...TypeRef}enumValues(includeDeprecated:true){name description isDeprecated deprecationReason}possibleTypes{...TypeRef}}directives{name description locations args{...InputValue}}}}fragment InputValue on __InputValue{name description type{...TypeRef}defaultValue}fragment TypeRef on __Type{kind name ofType{kind name ofType{kind name ofType{kind name ofType{kind name ofType{kind name ofType{kind name ofType{kind name}}}}}}}}'
     
     if curl -sf -X POST "$GRAPHQL_ENDPOINT" \
         -H "Content-Type: application/json" \
         -H "X-Allow-Introspection: true" \
-        -d "$INTROSPECTION_QUERY" \
+        --max-time 30 \
+        -d "{\"query\":\"$INTROSPECTION_QUERY\"}" \
         -o "$SCHEMA_FILE.json" 2>/dev/null; then
         
-        # Convert to SDL
-        if npx -y graphql-json-to-sdl "$SCHEMA_FILE.json" > "$SCHEMA_FILE" 2>/dev/null; then
-            rm -f "$SCHEMA_FILE.json"
-            log_success "Schema downloaded via introspection"
-            return 0
+        # Check if response is valid
+        if command -v jq &> /dev/null && jq -e '.__schema.types' "$SCHEMA_FILE.json" >/dev/null 2>&1; then
+            # Try to convert to SDL
+            if command -v npx &> /dev/null; then
+                if npx -y graphql-json-to-sdl "$SCHEMA_FILE.json" > "$SCHEMA_FILE" 2>/dev/null; then
+                    rm -f "$SCHEMA_FILE.json"
+                    log_success "Schema downloaded via introspection"
+                    return 0
+                fi
+            fi
         fi
         rm -f "$SCHEMA_FILE.json"
     fi
     
-    # Create minimal placeholder
-    log_warning "Creating placeholder schema..."
-    cat > "$SCHEMA_FILE" << 'EOF'
-type Query {
-  _placeholder: String
-}
-type Mutation {
-  _placeholder: String
-}
-schema {
-  query: Query
-  mutation: Mutation
-}
-EOF
+    # Fallback: Use placeholder from assure-graphql-files
+    log_warning "Could not download schema, using placeholder..."
+    create_placeholders
     
     return 2
 }
@@ -330,15 +153,24 @@ validate_schema() {
     fi
     
     local content=$(cat "$SCHEMA_FILE")
+    local size=$(wc -c < "$SCHEMA_FILE")
     
+    # Check for error messages
+    if echo "$content" | grep -q "Missing required type"; then
+        log_error "Schema contains error messages"
+        return 1
+    fi
+    
+    # Check for placeholder
     if echo "$content" | grep -q "_placeholder"; then
-        log_warning "Schema is a placeholder"
+        log_warning "Schema is a placeholder ($size bytes)"
         return 2
     fi
     
+    # Check for valid GraphQL
     if echo "$content" | grep -qE "(type Query|type Mutation)"; then
         local lines=$(wc -l < "$SCHEMA_FILE")
-        log_success "Schema is valid ($lines lines)"
+        log_success "Schema is valid ($lines lines, $size bytes)"
         return 0
     fi
     
@@ -350,7 +182,7 @@ validate_schema() {
 run_codegen() {
     log_info "Running GraphQL code generation..."
     
-    # ✅ ใช้ --config เพื่อระบุ config file
+    # Use the TypeScript config file
     if npx @graphql-codegen/cli --config apollo/codegen.ts 2>&1 | tee /tmp/codegen.log; then
         log_success "Code generation completed"
         return 0
@@ -366,16 +198,16 @@ check_generated() {
     log_info "Checking generated files..."
     
     local all_ok=true
-    local files=("graphql.ts" "index.ts" "gql.ts" "fragment-masking.ts" "fragments.ts")
+    local files=("graphql.ts" "index.ts" "gql.ts" "fragment-masking.ts" "fragments.ts" "introspection.json")
     
     for file in "${files[@]}"; do
         local filepath="$GENERATED_DIR/$file"
         if [ -f "$filepath" ]; then
             local size=$(wc -c < "$filepath")
-            if [ $size -gt 100 ]; then
+            if [ $size -gt 500 ]; then
                 log_success "$file ($size bytes)"
             else
-                log_warning "$file (placeholder, $size bytes)"
+                log_warning "$file (may be placeholder, $size bytes)"
             fi
         else
             log_error "$file (missing)"
@@ -399,7 +231,7 @@ main() {
     log_info "Starting GraphQL setup..."
     echo ""
     
-    # Step 1: Create placeholders
+    # Step 1: Create placeholders first (ensures app can start)
     create_placeholders || {
         log_error "Failed to create placeholders"
         exit 1
@@ -418,15 +250,21 @@ main() {
         # Step 4: Validate schema
         if [ $schema_status -eq 0 ]; then
             validate_schema
+            validation_status=$?
             echo ""
             
-            # Step 5: Run codegen
-            if run_codegen; then
-                echo ""
-                log_success "GraphQL client generated successfully"
+            # Step 5: Run codegen if schema is good
+            if [ $validation_status -eq 0 ]; then
+                if run_codegen; then
+                    echo ""
+                    log_success "GraphQL client generated successfully"
+                else
+                    log_warning "Codegen failed, keeping placeholder files"
+                    create_placeholders
+                    echo ""
+                fi
             else
-                log_warning "Using placeholder files"
-                create_placeholders
+                log_warning "Schema validation failed, keeping placeholders"
                 echo ""
             fi
         else
@@ -446,7 +284,9 @@ main() {
     echo -e "${GREEN}║          GraphQL Setup Complete                            ║${NC}"
     echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    log_info "If you encounter issues, run: make graphql-fix"
+    log_info "Application can now start with placeholder files"
+    log_info "Real schema will be generated when backend is ready"
+    log_info "To manually regenerate: npm run graphql:introspect"
     echo ""
 }
 

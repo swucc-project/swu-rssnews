@@ -21,5 +21,10 @@ namespace rssnews.GraphQL.Handlers
         [Subscribe]
         [Topic] // Topic: OnItemDeleted
         public string OnItemDeleted([EventMessage] string itemId) => itemId;
+
+        [Authorize]
+        [Subscribe]
+        [Topic("BulkMessageTopic")]
+        public Message BulkMessage([EventMessage] Message message) => message;
     }
 }

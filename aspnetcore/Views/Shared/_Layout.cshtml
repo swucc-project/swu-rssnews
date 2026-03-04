@@ -1,0 +1,74 @@
+﻿@using Microsoft.Extensions.Configuration
+@using System.ComponentModel.Design
+@using rssnews.Models
+@using InertiaCore
+@using InertiaCore.Utils
+@using Vite.AspNetCore
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Vite.AspNetCore
+@inherits Microsoft.AspNetCore.Mvc.Razor.RazorPage<TModel>
+@inject IConfiguration Configuration
+@inject IViteManifest Manifest
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnvironment
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="description" content="ระบบข่าวสารและกิจกรรม มหาวิทยาลัยศรีนครินทรวิโรฒ">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta property="og:title" content="@ViewData["Title"]">
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="ระบบข่าวสารและกิจกรรม มหาวิทยาลัยศรีนครินทรวิโรฒ">
+    <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
+    <link rel="alternate" type="application/rss+xml" title="RSS Feed"
+          href="@(Configuration["AppSettings:PublicBaseUrl"] ?? "/feed.xml")" />
+    @if (Model != null)
+    {
+        @await Inertia.Head(Model)
+    }
+    <title>@ViewData["Title"] - ระบบข่าวสารและกิจกรรม มหาวิทยาลัยศรีนครินทรวิโรฒ</title>
+    <environment include="Development">
+        <vite-client />
+        <vite-src src="hub/main.js" />
+    </environment>
+    <environment include="Production">
+        <link rel="stylesheet" href="~/@Manifest["css/app.css"]!.File" asp-append-version="true" />
+        <script defer type="module" src="~/@Manifest["hub/main.js"]!.File" asp-append-version="true"></script>
+    </environment>
+    <style>
+                                                                                                                                        html {
+                                                                                                                                        scroll-padding-top: 5rem;
+                                                                                                                                        }
+
+                                                                                                                                        /* ✅ Prevent flash of unstyled content */
+                                                                                                                                        #app {
+                                                                                                                                        min-height: 100vh;
+                                                                                                                                        }
+
+                                                                                                                                        /* ✅ Loading state */
+                                                                                                                                        .inertia-loading {
+                                                                                                                                        opacity: 0.5;
+                                                                                                                                        pointer-events: none;
+                                                                                                                                        }
+    </style>
+</head>
+
+<body>
+    <div id="app" data-page='@await Inertia.Html(Model)'>
+        @RenderBody()
+    </div>
+
+    @if (!WebHostEnvironment.IsDevelopment())
+    {
+        <script>
+                                                                                                                                                                                                                                            if ('serviceWorker' in navigator) {
+                                                                                                                                                                                                                                                window.addEventListener('load', () => {
+                                                                                                                                                                                                                                                    // navigator.serviceWorker.register('/service-worker.js');
+                                                                                                                                                                                                                                                });
+                                                                                                                                                                                                                                            }
+        </script>
+    }
+</body>
+
+</html>

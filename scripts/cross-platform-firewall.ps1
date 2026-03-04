@@ -1,88 +1,177 @@
 # cross-platform-firewall.ps1
-# Unified firewall management for Windows + Linux (via WSL2)
+# Unified firewall management for Windows + WSL2
+# Compatible with firewalld / ufw
 
 param(
-    [Parameter(Mandatory=$false)]
-    [ValidateSet('Enable','Disable','Status','Sync')]
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('Enable', 'Disable', 'Status', 'Sync')]
     [string]$Action = 'Enable',
-    
-    [Parameter(Mandatory=$false)]
-    [ValidateSet('Development','Production','All')]
+
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('Development', 'Production', 'All')]
     [string]$Environment = 'Development'
 )
 
+# ------------------------------
+# Require Administrator
+# ------------------------------
+$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$principal = New-Object Security.Principal.WindowsPrincipal($identity)
+
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Error "❌ This script must be run as Administrator"
+    exit 1
+}
+
+# ------------------------------
+# Check WSL availability
+# ------------------------------
 function Test-WSLAvailable {
     try {
-        $wslStatus = wsl --status 2>&1
-        return $?
-    } catch {
+        $distros = wsl -l -q 2>$null
+        return ($distros -and $distros.Count -gt 0)
+    }
+    catch {
         return $false
     }
 }
 
+# ------------------------------
+# Detect Linux firewall
+# ------------------------------
+function Get-LinuxFirewallType {
+    if (-not (Test-WSLAvailable)) {
+        return $null
+    }
+
+    $firewalld = wsl bash -c "command -v firewall-cmd" 2>$null
+    if ($firewalld) { return "firewalld" }
+
+    $ufw = wsl bash -c "command -v ufw" 2>$null
+    if ($ufw) { return "ufw" }
+
+    return "none"
+}
+
+# ------------------------------
+# Sync firewall rules
+# ------------------------------
 function Sync-FirewallRules {
+
     Write-Host "`n🔄 Synchronizing firewall rules..." -ForegroundColor Cyan
-    
-    # Configure Windows Firewall
-    Write-Host "`n📦 Windows Configuration:" -ForegroundColor Yellow
-    & "$PSScriptRoot\firewall\windows\firewall-setup.ps1" -Action Enable -Environment $Environment
-    
-    # Configure Linux Firewall (if WSL2 available)
-    if (Test-WSLAvailable) {
-        Write-Host "`n🐧 Linux Configuration:" -ForegroundColor Yellow
-        
-        # Copy script to WSL
-        $scriptPath = "$PSScriptRoot\firewall\linux\firewalld-setup.sh"
-        wsl cp "$scriptPath" /tmp/firewalld-setup.sh
-        wsl chmod +x /tmp/firewalld-setup.sh
-        
-        # Execute in WSL
-        wsl sudo /tmp/firewalld-setup.sh enable $Environment.ToLower()
-        
-        Write-Host "✅ Linux firewall configured" -ForegroundColor Green
-    } else {
-        Write-Host "⚠️  WSL2 not available, skipping Linux configuration" -ForegroundColor Yellow
+
+    # --------------------------
+    # Windows Firewall
+    # --------------------------
+    Write-Host "`n🪟 Windows Firewall:" -ForegroundColor Yellow
+    & "$PSScriptRoot\firewall\windows\firewall-setup.ps1" `
+        -Action Enable `
+        -Environment $Environment
+
+    # --------------------------
+    # Linux Firewall (WSL2)
+    # --------------------------
+    if (-not (Test-WSLAvailable)) {
+        Write-Host "⚠️  WSL2 not available, skipping Linux firewall" -ForegroundColor Yellow
+        return
+    }
+
+    $fwType = Get-LinuxFirewallType
+    Write-Host "`n🐧 Linux Firewall Detected: $fwType" -ForegroundColor Yellow
+
+    switch ($fwType) {
+
+        "firewalld" {
+            $scriptPath = "$PSScriptRoot\firewall\linux\firewalld-setup.sh"
+            if (-not (Test-Path $scriptPath)) {
+                Write-Host "❌ firewalld-setup.sh not found" -ForegroundColor Red
+                return
+            }
+
+            $linuxPath = wsl wslpath "$scriptPath"
+            wsl chmod +x $linuxPath
+            wsl sudo $linuxPath enable $Environment.ToLower()
+
+            Write-Host "✅ firewalld configured" -ForegroundColor Green
+        }
+
+        "ufw" {
+            Write-Host "⚙ Configuring ufw..." -ForegroundColor Cyan
+            wsl sudo ufw allow ssh
+            wsl sudo ufw --force enable
+            Write-Host "✅ ufw enabled" -ForegroundColor Green
+        }
+
+        default {
+            Write-Host "⚠️  No supported Linux firewall detected" -ForegroundColor Yellow
+        }
     }
 }
 
+# ------------------------------
+# Show status
+# ------------------------------
 function Show-CrossPlatformStatus {
+
     Write-Host "`n📊 Cross-Platform Firewall Status" -ForegroundColor Magenta
-    Write-Host "=" * 80
-    
-    # Windows Status
+    Write-Host ("=" * 80)
+
+    # Windows
     Write-Host "`n🪟 Windows Firewall:" -ForegroundColor Cyan
     & "$PSScriptRoot\firewall\windows\firewall-setup.ps1" -Action Status
-    
-    # Linux Status (if available)
-    if (Test-WSLAvailable) {
-        Write-Host "`n🐧 Linux Firewall:" -ForegroundColor Cyan
-        wsl sudo firewall-cmd --list-all 2>/dev/null || Write-Host "Not configured" -ForegroundColor Gray
+
+    # Linux
+    if (-not (Test-WSLAvailable)) {
+        Write-Host "`n🐧 Linux Firewall: WSL2 not available" -ForegroundColor Yellow
+        return
+    }
+
+    $fwType = Get-LinuxFirewallType
+    Write-Host "`n🐧 Linux Firewall ($fwType):" -ForegroundColor Cyan
+
+    switch ($fwType) {
+        "firewalld" {
+            wsl sudo firewall-cmd --list-all
+        }
+        "ufw" {
+            wsl sudo ufw status
+        }
+        default {
+            Write-Host "Not configured" -ForegroundColor Gray
+        }
     }
 }
 
-# Main execution
+# ------------------------------
+# Main
+# ------------------------------
 switch ($Action) {
+
     'Enable' {
         Sync-FirewallRules
     }
-    
-    'Disable' {
-        Write-Host "`n⏸️  Disabling all firewalls..." -ForegroundColor Yellow
-        
-        # Disable Windows
-        & "$PSScriptRoot\firewall\windows\firewall-setup.ps1" -Action Disable
-        
-        # Disable Linux
-        if (Test-WSLAvailable) {
-            wsl sudo systemctl stop firewalld 2>/dev/null || true
-        }
-    }
-    
-    'Status' {
-        Show-CrossPlatformStatus
-    }
-    
+
     'Sync' {
         Sync-FirewallRules
+    }
+
+    'Disable' {
+        Write-Host "`n⏸️  Disabling firewalls..." -ForegroundColor Yellow
+
+        # Windows
+        & "$PSScriptRoot\firewall\windows\firewall-setup.ps1" -Action Disable
+
+        # Linux
+        if (Test-WSLAvailable) {
+            try {
+                wsl bash -c "sudo systemctl stop firewalld || true"
+                wsl bash -c "sudo ufw disable || true"
+            }
+            catch {}
+        }
+    }
+
+    'Status' {
+        Show-CrossPlatformStatus
     }
 }

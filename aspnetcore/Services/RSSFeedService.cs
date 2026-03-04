@@ -24,7 +24,7 @@ public class RSSFeedService(IDbConnectionFactory dbFactory, IRequest httpRequest
         {
             feedItemsQuery = feedItemsQuery
                                 .Join<Item, Category>((item, category) => item.CategoryID == category.CategoryID)
-                                .Where(item => item.Category.CategoryName.EqualsIgnoreCase(request.CategoryName));
+                                .Where<Category>(category => category.CategoryName.EqualsIgnoreCase(request.CategoryName));
         }
 
         var feedItems = db.LoadSelect(feedItemsQuery);

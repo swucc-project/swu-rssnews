@@ -2,12 +2,12 @@
 # PowerShell Script สำหรับจัดการ Firewall Rules
 
 param(
-    [Parameter(Mandatory=$false)]
-    [ValidateSet('Enable','Disable','Remove','Status')]
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('Enable', 'Disable', 'Remove', 'Status')]
     [string]$Action = 'Enable',
     
-    [Parameter(Mandatory=$false)]
-    [ValidateSet('Development','Production','All')]
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('Development', 'Production', 'All')]
     [string]$Environment = 'Development'
 )
 
@@ -19,50 +19,68 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 # กำหนด Port Mappings
 $DevPorts = @{
-    "ASP.NET Core API" = 5000
-    "Vite Dev Server" = 5173
-    "Nginx Dev HTTP" = 8080
-    "SSR Server" = 13714
-    "Vite HMR WebSocket" = 24678
+    "ASP.NET Core API"       = 5000
+    "Vite Dev Server"        = 5173
+    "Nginx Dev HTTP"         = 8080
+    "Vite HMR WebSocket"     = 24678
     "SQL Server (Localhost)" = 1433
-    "OpenSSH Server" = 22
+    "OpenSSH Server"         = 22
+    "Samba Server"           = 445
 }
 
 $ProdPorts = @{
-    "Nginx HTTP" = 80
+    "Nginx HTTP"  = 80
     "Nginx HTTPS" = 443
 }
 
+$SambaOptionalPorts = @{
+    "Samba NetBIOS Name Service" = 137
+    "Samba Datagram Service"     = 138
+    "Samba Session Service"      = 139
+}
+
 function Enable-FirewallRules {
-    param($Ports, $Profile = "Domain,Private")
+    param(
+        $Ports,
+        [string[]]$Rule = @("Domain", "Private")
+    )
     
     foreach ($name in $Ports.Keys) {
         $port = $Ports[$name]
         $ruleName = "Docker - $name"
         
-        Write-Host "🔧 สร้าง rule: $ruleName (Port $port)" -ForegroundColor Cyan
-        
         # ลบ rule เก่า (ถ้ามี)
         Remove-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
+
+        $protocol = "TCP"
+        if ($port -in 137, 138) {
+            $protocol = "UDP"
+        }
         
         # สร้าง rule ใหม่
         $params = @{
-            DisplayName = $ruleName
-            Direction = "Inbound"
-            LocalPort = $port
-            Protocol = "TCP"
-            Action = "Allow"
-            Profile = $Profile
-            Enabled = $true
+            DisplayName         = $ruleName
+            Direction           = "Inbound"
+            LocalPort           = $port
+            Protocol            = $protocol
+            Action              = "Allow"
+            Profile             = $Rule
+            Enabled             = $true
+            EdgeTraversalPolicy = 'Block'
         }
         
         # เพิ่มเงื่อนไขพิเศษสำหรับ SQL Server
         if ($name -like "*SQL Server*") {
-            $params['RemoteAddress'] = "127.0.0.1,::1,LocalSubnet"
+            $params['RemoteAddress'] = @("127.0.0.1", "::1", "LocalSubnet")
+        }
+
+        # เพิ่มเงื่อนไขพิเศษสำหรับ OpenSSH Server
+        if ($name -like "*OpenSSH Server*") {
+            $params['RemoteAddress'] = @("127.0.0.1", "::1", "LocalSubnet")
         }
         
         New-NetFirewallRule @params | Out-Null
-        Write-Host "✅ สร้างสำเร็จ" -ForegroundColor Green
+        Write-Host "✅ $ruleName created" -ForegroundColor Green
     }
 }
 
@@ -90,10 +108,15 @@ function Show-FirewallStatus {
     Write-Host "`n📊 Firewall Rules Status" -ForegroundColor Magenta
     Write-Host "=" * 80 -ForegroundColor Gray
     
-    Get-NetFirewallRule | Where-Object {$_.DisplayName -like "Docker -*"} | 
-        Select-Object DisplayName, Enabled, Direction, Action, 
-            @{Name='Port';Expression={(Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_).LocalPort}} |
+    Get-NetFirewallRule | Where-Object { $_.DisplayName -like "Docker -*" } | 
+    Select-Object DisplayName, Enabled, Direction, Action, 
+    @{Name         = 'Port';
+        Expression = {
+            (Get-NetFirewallPortFilter -AssociatedNetFirewallRule $_ |
+            Select-Object -ExpandProperty LocalPort) -join ","
+        } |
         Format-Table -AutoSize
+    }
 }
 
 # Main Logic
@@ -110,7 +133,7 @@ switch ($Action) {
             Write-Host "`n🏭 Production Environment" -ForegroundColor Cyan
             Enable-FirewallRules -Ports $ProdPorts -Profile "Domain,Private,Public"
         }
-        
+        Enable-FirewallRules -Ports $SambaOptionalPorts -Profile "Domain,Private,Public"
         Write-Host "`n✅ เสร็จสิ้น!`n" -ForegroundColor Green
     }
     

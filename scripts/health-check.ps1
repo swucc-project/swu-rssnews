@@ -1,169 +1,323 @@
 # health-check.ps1
-# Health check for all services
+# Comprehensive health monitoring for swu-rssnews
 
 param(
-    [Parameter(Mandatory=$false)]
     [switch]$Detailed,
-    
-    [Parameter(Mandatory=$false)]
     [switch]$Continuous,
-    
-    [Parameter(Mandatory=$false)]
-    [int]$Interval = 30
+    [int]$Interval = 30,
+    [switch]$Json,
+    [switch]$Silent,
+
+    # ✅ ใช้ localhost แทน service name เพราะเรียกจากนอก container
+    [string]$BackendUrl = "http://localhost:5000",
+    [string]$GraphQLUrl = "http://localhost:5000/graphql",
+    [string]$NginxUrl = "http://localhost:8080",
+    [string]$ViteUrl = "http://localhost:5173"
 )
 
 $ProjectName = "swu-rssnews"
+$ErrorActionPreference = "Continue"
 
-function Test-ServiceHealth {
+# ✅ Helper Functions
+function Get-ComposeCommand {
+    try {
+        $null = docker compose version 2>$null
+        if ($LASTEXITCODE -eq 0) { return "docker compose" }
+    }
+    catch {}
+    return "docker-compose"
+}
+
+$compose = Get-ComposeCommand
+
+function Write-ColorOutput {
+    param(
+        [string]$Message,
+        [string]$Color = "White",
+        [switch]$NoNewline
+    )
+    if (-not $Silent) {
+        if ($NoNewline) {
+            Write-Host $Message -ForegroundColor $Color -NoNewline
+        }
+        else {
+            Write-Host $Message -ForegroundColor $Color
+        }
+    }
+}
+
+function Test-HttpEndpoint {
     param(
         [string]$Name,
         [string]$Url,
-        [string]$ExpectedStatus = "200"
+        [hashtable]$Headers = @{},
+        [int]$TimeoutSec = 5
     )
-    
+
     try {
-        $response = Invoke-WebRequest -Uri $Url -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
+        $response = Invoke-WebRequest -Uri $Url -TimeoutSec $TimeoutSec -UseBasicParsing -Headers $Headers -ErrorAction Stop
         
-        $status = $response.StatusCode
-        $statusColor = if ($status -eq 200) { "Green" } else { "Yellow" }
-        
-        Write-Host "  ✅ " -ForegroundColor $statusColor -NoNewline
-        Write-Host "$Name " -NoNewline
-        Write-Host "[$status]" -ForegroundColor $statusColor
-        
-        if ($Detailed) {
-            Write-Host "     URL: $Url" -ForegroundColor Gray
-            Write-Host "     Response Time: $($response.Headers.'X-Response-Time')" -ForegroundColor Gray
+        $result = @{
+            Name         = $Name
+            Status       = "healthy"
+            StatusCode   = $response.StatusCode
+            ResponseTime = 0
+            Url          = $Url
         }
-        
-        return $true
-    } catch {
-        Write-Host "  ❌ $Name " -ForegroundColor Red -NoNewline
-        Write-Host "[FAILED]" -ForegroundColor Red
-        
+
         if ($Detailed) {
-            Write-Host "     URL: $Url" -ForegroundColor Gray
-            Write-Host "     Error: $($_.Exception.Message)" -ForegroundColor Red
+            Write-ColorOutput "  ✅ $Name [$($response.StatusCode)] - $Url" "Green"
         }
-        
-        return $false
+        else {
+            Write-ColorOutput "  ✅ $Name" "Green"
+        }
+
+        return $result
+    }
+    catch {
+        $result = @{
+            Name         = $Name
+            Status       = "unhealthy"
+            StatusCode   = 0
+            ResponseTime = 0
+            Url          = $Url
+            Error        = $_.Exception.Message
+        }
+
+        if ($Detailed) {
+            Write-ColorOutput "  ❌ $Name [FAILED] - $Url" "Red"
+            Write-ColorOutput "     Error: $($_.Exception.Message)" "DarkRed"
+        }
+        else {
+            Write-ColorOutput "  ❌ $Name" "Red"
+        }
+
+        return $result
     }
 }
 
-function Test-SQLServerHealth {
+function Test-ContainerHealth {
     try {
-        $password = Get-Content "./secrets/db_password.txt" -Raw -ErrorAction Stop
-        $result = docker-compose exec -T mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$password" -Q "SELECT @@VERSION" -C 2>$null
+        $containers = Invoke-Expression "$compose ps --format json" 2>$null | ConvertFrom-Json
         
-        if ($?) {
-            Write-Host "  ✅ SQL Server " -ForegroundColor Green -NoNewline
-            Write-Host "[HEALTHY]" -ForegroundColor Green
-            
-            if ($Detailed) {
-                Write-Host "     Version: $($result -split "`n" | Select-Object -First 1)" -ForegroundColor Gray
+        if (-not $containers) {
+            return @{
+                running    = 0
+                healthy    = 0
+                unhealthy  = 0
+                total      = 0
+                containers = @()
             }
-            
-            return $true
-        } else {
-            throw "Connection failed"
         }
-    } catch {
-        Write-Host "  ❌ SQL Server " -ForegroundColor Red -NoNewline
-        Write-Host "[FAILED]" -ForegroundColor Red
+
+        $total = $containers.Count
+        $running = ($containers | Where-Object { $_.State -eq "running" }).Count
+        $healthy = ($containers | Where-Object { $_.Health -eq "healthy" }).Count
         
-        if ($Detailed) {
-            Write-Host "     Error: $($_.Exception.Message)" -ForegroundColor Red
+        return @{
+            running    = $running
+            healthy    = $healthy
+            unhealthy  = $total - $healthy
+            total      = $total
+            containers = $containers
         }
-        
-        return $false
+    }
+    catch {
+        return @{
+            running    = 0
+            healthy    = 0
+            unhealthy  = 0
+            total      = 0
+            containers = @()
+            error      = $_.Exception.Message
+        }
     }
 }
 
-function Show-HealthCheck {
+function Test-DatabaseConnection {
+    try {
+        if (-not (Test-Path "./secrets/db_password.txt")) {
+            return @{ status = "skipped"; reason = "No password file" }
+        }
+
+        $password = Get-Content "./secrets/db_password.txt" -Raw
+        $null = Invoke-Expression "$compose exec -T mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P `"$password`" -Q `"SELECT 1`" -C -b" 2>$null
+
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorOutput "  ✅ SQL Server" "Green"
+            return @{ status = "healthy" }
+        }
+        else {
+            Write-ColorOutput "  ❌ SQL Server" "Red"
+            return @{ status = "unhealthy" }
+        }
+    }
+    catch {
+        Write-ColorOutput "  ❌ SQL Server" "Red"
+        return @{ status = "unhealthy"; error = $_.Exception.Message }
+    }
+}
+
+function Get-HealthReport {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     
-    Write-Host "`n🏥 Health Check - $ProjectName" -ForegroundColor Cyan
-    Write-Host "Time: $timestamp" -ForegroundColor Gray
-    Write-Host "=" * 60
-    
-    # Check Docker
-    Write-Host "`n🐳 Docker Status:" -ForegroundColor Yellow
+    if (-not $Silent) {
+        Write-ColorOutput "`n🏥 Health Check - $ProjectName" "Cyan"
+        Write-ColorOutput "Time: $timestamp" "Gray"
+        Write-ColorOutput ("=" * 60)
+    }
+
+    $report = @{
+        timestamp = $timestamp
+        project   = $ProjectName
+        checks    = @{}
+    }
+
+    # ✅ 1. Docker Engine
+    if (-not $Silent) { Write-ColorOutput "`n🐳 Docker:" "Yellow" }
     try {
-        docker info | Out-Null
-        Write-Host "  ✅ Docker Engine" -ForegroundColor Green
-    } catch {
-        Write-Host "  ❌ Docker Engine [NOT RUNNING]" -ForegroundColor Red
-        return
-    }
-    
-    # Check Containers
-    Write-Host "`n📦 Containers:" -ForegroundColor Yellow
-    $containers = docker-compose ps --format json | ConvertFrom-Json
-    
-    if ($containers) {
-        foreach ($container in $containers) {
-            $statusColor = if ($container.State -eq "running") { "Green" } else { "Red" }
-            $statusIcon = if ($container.State -eq "running") { "✅" } else { "❌" }
-            
-            Write-Host "  $statusIcon " -ForegroundColor $statusColor -NoNewline
-            Write-Host "$($container.Service) " -NoNewline
-            Write-Host "[$($container.State)]" -ForegroundColor $statusColor
-            
-            if ($Detailed) {
-                Write-Host "     Health: $($container.Health)" -ForegroundColor Gray
-            }
+        docker version | Out-Null 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorOutput "  ✅ Docker Engine" "Green"
+            $report.checks["docker"] = @{ status = "healthy" }
         }
-    } else {
-        Write-Host "  ⚠️  No containers running" -ForegroundColor Yellow
+        else {
+            Write-ColorOutput "  ❌ Docker not running" "Red"
+            $report.checks["docker"] = @{ status = "unhealthy" }
+            return $report
+        }
+    }
+    catch {
+        Write-ColorOutput "  ❌ Docker not running" "Red"
+        $report.checks["docker"] = @{ status = "unhealthy" }
+        return $report
+    }
+
+    # ✅ 2. Containers
+    if (-not $Silent) { Write-ColorOutput "`n📦 Containers:" "Yellow" }
+    $containerHealth = Test-ContainerHealth
+    $report.checks["containers"] = $containerHealth
+
+    if ($containerHealth.total -gt 0) {
+        Write-ColorOutput "  Running: $($containerHealth.running)/$($containerHealth.total)" "Cyan"
+        if ($containerHealth.healthy -gt 0) {
+            Write-ColorOutput "  Healthy: $($containerHealth.healthy)" "Green"
+        }
+        if ($containerHealth.unhealthy -gt 0) {
+            Write-ColorOutput "  Unhealthy: $($containerHealth.unhealthy)" "Red"
+        }
+    }
+    else {
+        Write-ColorOutput "  ⚠️  No containers running" "Yellow"
+    }
+
+    # ✅ 3. Database
+    if (-not $Silent) { Write-ColorOutput "`n🗄️  Database:" "Yellow" }
+    $report.checks["database"] = Test-DatabaseConnection
+
+    # ✅ 4. HTTP Services
+    if (-not $Silent) { Write-ColorOutput "`n🌐 HTTP Services:" "Yellow" }
+    
+    $httpChecks = @()
+    
+    # Backend - lightweight health check
+    $httpChecks += Test-HttpEndpoint "Backend API" "$BackendUrl/health"
+    
+    # Backend Ready check
+    if ($Detailed) {
+        $httpChecks += Test-HttpEndpoint "Backend (Ready)" "$BackendUrl/health/ready"
     }
     
-    # Check Services
-    Write-Host "`n🌐 Services:" -ForegroundColor Yellow
+    # Nginx
+    $httpChecks += Test-HttpEndpoint "Nginx" "$NginxUrl/health"
     
-    $sqlHealthy = Test-SQLServerHealth
-    $backendHealthy = Test-ServiceHealth -Name "ASP.NET Core API" -Url "http://localhost:5000/health"
-    $nginxHealthy = Test-ServiceHealth -Name "Nginx" -Url "http://localhost:8080/health"
-    $viteHealthy = Test-ServiceHealth -Name "Vite Dev Server" -Url "http://localhost:5173"
-    $ssrHealthy = Test-ServiceHealth -Name "SSR Server" -Url "http://localhost:13714/health"
-    
+    # Vite Dev
+    $httpChecks += Test-HttpEndpoint "Vite Dev" $ViteUrl
+
     # GraphQL
     try {
-        $graphqlBody = '{"query":"{ __typename }"}'
-        $response = Invoke-RestMethod -Uri "http://localhost:5000/graphql" -Method Post -Body $graphqlBody -ContentType "application/json" -TimeoutSec 5
-        Write-Host "  ✅ GraphQL Endpoint" -ForegroundColor Green
-    } catch {
-        Write-Host "  ❌ GraphQL Endpoint [FAILED]" -ForegroundColor Red
+        $body = '{"query":"{ __typename }"}'
+        $headers = @{
+            "Content-Type"          = "application/json"
+            "X-Allow-Introspection" = "true"
+        }
+        
+        $null = Invoke-RestMethod -Uri $GraphQLUrl -Method Post -Body $body -Headers $headers -TimeoutSec 5 -ErrorAction Stop
+        
+        Write-ColorOutput "  ✅ GraphQL Endpoint" "Green"
+        $httpChecks += @{
+            Name   = "GraphQL"
+            Status = "healthy"
+            Url    = $GraphQLUrl
+        }
     }
-    
-    # Summary
-    Write-Host "`n📊 Summary:" -ForegroundColor Yellow
-    
-    $totalServices = 6
-    $healthyServices = @($sqlHealthy, $backendHealthy, $nginxHealthy, $viteHealthy, $ssrHealthy).Where({$_}).Count + 1
-    
-    $healthPercentage = [math]::Round(($healthyServices / $totalServices) * 100)
-    $summaryColor = if ($healthPercentage -eq 100) { "Green" } elseif ($healthPercentage -ge 50) { "Yellow" } else { "Red" }
-    
-    Write-Host "  Services: $healthyServices/$totalServices healthy ($healthPercentage%)" -ForegroundColor $summaryColor
-    
-    if ($healthPercentage -eq 100) {
-        Write-Host "  ✅ All systems operational" -ForegroundColor Green
-    } elseif ($healthPercentage -ge 50) {
-        Write-Host "  ⚠️  Some services degraded" -ForegroundColor Yellow
-    } else {
-        Write-Host "  ❌ Critical: Multiple services down" -ForegroundColor Red
+    catch {
+        Write-ColorOutput "  ❌ GraphQL Endpoint" "Red"
+        $httpChecks += @{
+            Name   = "GraphQL"
+            Status = "unhealthy"
+            Url    = $GraphQLUrl
+            Error  = $_.Exception.Message
+        }
     }
+
+    $report.checks["http"] = $httpChecks
+
+    # ✅ 5. Summary
+    $healthyCount = ($httpChecks | Where-Object { $_.Status -eq "healthy" }).Count
+    $totalCount = $httpChecks.Count + 1  # +1 for database
     
-    Write-Host "`n"
+    if ($report.checks["database"].status -eq "healthy") {
+        $healthyCount++
+    }
+
+    $healthPercent = [math]::Round(($healthyCount / $totalCount) * 100)
+
+    $summaryColor = if ($healthPercent -eq 100) { "Green" }
+    elseif ($healthPercent -ge 70) { "Yellow" }
+    else { "Red" }
+
+    if (-not $Silent) {
+        Write-ColorOutput "`n📊 Summary:" "Yellow"
+        Write-ColorOutput "  Services: $healthyCount/$totalCount healthy ($healthPercent%)" $summaryColor
+    }
+
+    $report["summary"] = @{
+        healthy = $healthyCount
+        total   = $totalCount
+        percent = $healthPercent
+        status  = if ($healthPercent -eq 100) { "healthy" } 
+        elseif ($healthPercent -ge 70) { "degraded" } 
+        else { "unhealthy" }
+    }
+
+    return $report
 }
 
-# Main execution
+# ✅ Main Execution
 do {
-    Show-HealthCheck
-    
+    $report = Get-HealthReport
+
+    if ($Json) {
+        $report | ConvertTo-Json -Depth 10
+    }
+
     if ($Continuous) {
-        Write-Host "⏳ Next check in $Interval seconds... (Press Ctrl+C to stop)" -ForegroundColor Gray
-        Start-Sleep -Seconds $Interval
+        if (-not $Silent) {
+            Write-ColorOutput "`n⏳ Next check in $Interval seconds (Ctrl+C to stop)" "Gray"
+        }
+        Start-Sleep $Interval
         Clear-Host
     }
 } while ($Continuous)
+
+# ✅ Exit code based on health
+if ($report.summary.status -eq "healthy") {
+    exit 0
+}
+elseif ($report.summary.status -eq "degraded") {
+    exit 1
+}
+else {
+    exit 2
+}

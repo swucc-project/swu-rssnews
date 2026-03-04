@@ -1,127 +1,96 @@
-import { createApp, h, provide } from 'vue'
+import { createApp, h } from 'vue'
 import { DefaultApolloClient } from '@vue/apollo-composable'
 import { createInertiaApp } from '@inertiajs/vue3'
 import { createPinia } from 'pinia'
 import { grpcClient } from '~grpc/feed-client'
-import router from '@hub/router'
+import { useAuthStore } from '@hub/stores/auth'
 import globalComponents from '@suites/globalComponents.js'
 import apolloClient from '~apollo/client'
 
 // ✅ Import CSS
 import '~css/app.css'
 
-// ✅ Constants
-const appName = window.document.getElementsByTagName('title')[0]?.innerText || 'RSSNews'
+// ==============================
+// Constants
+// ==============================
+const isDev = import.meta.env.DEV
+const appName =
+    window.document.getElementsByTagName('title')[0]?.innerText ||
+    'RSSNews'
 
-// ✅ Error handler
+// ==============================
+// Error Handlers
+// ==============================
 const handleError = (error, info) => {
-    console.error('❌ Vue Error:', error)
-    console.error('📍 Error Info:', info)
+    console.error('Vue Error:', error)
 
-    // ✅ ส่งไปยัง error tracking service (เช่น Sentry)
-    // if (import.meta.env.PROD) {
-    //     Sentry.captureException(error, { extra: { info } })
-    // }
-}
-
-// ✅ Warning handler
-const handleWarn = (msg, vm, trace) => {
-    if (import.meta.env.DEV) {
-        console.warn('⚠️ Vue Warning:', msg)
-        console.warn('📍 Trace:', trace)
+    if (isDev) {
+        console.error('Error Info:', info)
     }
 }
 
-console.log('🚀 Initializing Inertia.js application...')
-console.log('🔧 Environment:', import.meta.env.MODE)
-console.log('🌐 API Endpoints:', {
-    graphql: import.meta.env.VITE_PUBLIC_GRAPHQL_ENDPOINT,
-    ws: import.meta.env.VITE_PUBLIC_GRAPHQL_WS_URL,
-    grpc: import.meta.env.VITE_PUBLIC_GRPC_ENDPOINT,
-})
+const handleWarn = (msg, vm, trace) => {
+    if (isDev) {
+        console.warn('Vue Warning:', msg)
+        console.warn('Trace:', trace)
+    }
+}
 
+// ==============================
+// Page Loader (IMPORTANT FIX)
+// ==============================
+const pages = import.meta.glob('./Pages/**/*.vue')
+
+// ==============================
+// Inertia App
+// ==============================
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
 
-    resolve: async (name) => {
-        console.log(`📄 Resolving page: ${name}`)
-
-        const pages = import.meta.glob('./Pages/**/*.vue')
+    resolve: (name) => {
         const path = `./Pages/${name}.vue`
+        const page = pages[path]
 
-        if (!pages[path]) {
-            console.error(`❌ Page not found: ${path}`)
-            console.log('📁 Available pages:', Object.keys(pages))
-            throw new Error(`Page not found: ${path}`)
+        if (!page) {
+            console.error(`Page not found: ${name}`)
+            return pages['./Pages/NotFound.vue']?.()
         }
 
-        try {
-            const page = await pages[path]()
-            console.log(`✅ Page loaded: ${name}`)
-            return page
-        } catch (error) {
-            console.error(`❌ Failed to load page: ${name}`, error)
-            throw error
-        }
+        return page()
     },
 
-    setup({ el, App, props, plugin }) {
-        console.log('🔧 Setting up Vue app...')
+    async setup({ el, App, props, plugin }) {
+        const pinia = createPinia()
+        const vueApp = createApp({ render: () => h(App, props) })
 
-        // ✅ Create Vue app with proper typing
-        const vueApp = createApp({
-            render: () => h(App, props),
-            setup() {
-                // ✅ Provide Apollo Client
-                provide(DefaultApolloClient, apolloClient)
-
-                // ✅ Provide gRPC Client
-                provide('grpcClient', grpcClient)
-
-                // ✅ Provide app info (useful for debugging)
-                provide('appInfo', {
-                    name: appName,
-                    version: import.meta.env.VITE_APP_VERSION || '1.0.0',
-                    env: import.meta.env.MODE,
-                })
-            }
-        })
-
-        // ✅ Error handling
+        vueApp.use(pinia)
+        vueApp.use(plugin)
+        vueApp.use(globalComponents)
         vueApp.config.errorHandler = handleError
         vueApp.config.warnHandler = handleWarn
 
-        // ✅ Performance tracking (development only)
-        if (import.meta.env.DEV) {
-            vueApp.config.performance = true
-        }
-
-        // ✅ Create Pinia store
-        const pinia = createPinia()
-
-        // ✅ Register plugins
-        vueApp.use(pinia)
-        vueApp.use(plugin)
-        vueApp.use(router)
-        vueApp.use(globalComponents)
-
-        // ✅ Mount app
+        const authStore = useAuthStore()
         try {
-            vueApp.mount(el)
-            console.log('✅ Vue app mounted successfully')
-
-            // ✅ Log mounted info
-            if (import.meta.env.DEV) {
-                console.log('🎯 Mounted to element:', el)
-                console.log('📦 Initial props:', props)
-            }
-        } catch (error) {
-            console.error('❌ Failed to mount Vue app:', error)
-            throw error
+            authStore.init()
+            await Promise.all([
+                authStore.reauthenticate().catch(e => console.error("Auth failed", e)),
+                // สามารถโหลดข้อมูลพื้นฐานอื่นๆ ที่นี่ได้
+            ])
+        } catch (e) {
+            console.warn("Initial data fetch failed", e)
         }
+
+        vueApp.provide(DefaultApolloClient, apolloClient)
+        vueApp.provide('grpcClient', grpcClient)
+        vueApp.provide('appInfo', {
+            name: appName,
+            version: import.meta.env.VITE_APP_VERSION || '1.0.0',
+            env: import.meta.env.MODE,
+        })
+
+        vueApp.mount(el)
     },
 
-    // ✅ Progress bar configuration
     progress: {
         delay: 250,
         color: '#29d',
@@ -130,19 +99,13 @@ createInertiaApp({
     },
 })
 
-// ✅ Global error handlers
+// ==============================
+// Global Error Listeners
+// ==============================
 window.addEventListener('error', (event) => {
-    console.error('❌ Global Error:', event.error)
+    console.error('Global Error:', event.error)
 })
 
 window.addEventListener('unhandledrejection', (event) => {
-    console.error('❌ Unhandled Promise Rejection:', event.reason)
+    console.error('Unhandled Promise Rejection:', event.reason)
 })
-
-// ✅ HMR support
-if (import.meta.hot) {
-    import.meta.hot.accept()
-    console.log('🔥 HMR enabled')
-}
-
-console.log('✅ Inertia.js client-side initialization complete')

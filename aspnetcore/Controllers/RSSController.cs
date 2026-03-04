@@ -1,4 +1,3 @@
-using InertiaCore;
 using Microsoft.AspNetCore.Mvc;
 using Vite.AspNetCore;
 using ServiceStack;
@@ -10,7 +9,7 @@ using rssnews.ServiceModel;
 namespace rssnews.Controllers
 {
     [Microsoft.AspNetCore.Mvc.Route("rss")]
-    public class RSSController(IConfiguration configuration, IViteManifest manifest, ISwitchLocalizationService currentLanguage) : Controller
+    public class RSSController(IConfiguration configuration, IViteManifest manifest, ISwitchLocalizationService currentLanguage) : InertiaController
     {
         private readonly IConfiguration _configuration = configuration;
         private readonly IViteManifest _manifest = manifest;
@@ -20,14 +19,14 @@ namespace rssnews.Controllers
         public IActionResult Index()
         {
             var language = _currentLanguage.GetRequestLanguage(HttpContext);
-            return Inertia.Render("Index", new { message = "จัดการข่าวสารและกิจกรรมของมหาวิทยาลัยศรีนครินทรวิโรฒ" });
+            return Inertia("Index", new { message = "จัดการข่าวสารและกิจกรรมของมหาวิทยาลัยศรีนครินทรวิโรฒ" });
         }
 
         [HttpGet("add")]
         [Authenticate]
         public IActionResult Add()
         {
-            return Inertia.Render("AddRSSItem");
+            return Inertia("AddRSSItem");
         }
 
         // --- Action สำหรับหน้าแก้ไขข่าว ---
@@ -41,7 +40,7 @@ namespace rssnews.Controllers
             {
                 return BadRequest("Item ID is required");
             }
-            return Inertia.Render("UpdateRSSItem", new
+            return Inertia("UpdateRSSItem", new
             {
                 itemID = itemId
             });
@@ -51,7 +50,7 @@ namespace rssnews.Controllers
         [Authenticate]
         public IActionResult Delete(string itemId)
         {
-            return Inertia.Render("DeleteRSSItem", new
+            return Inertia("DeleteRSSItem", new
             {
                 id = itemId
             });
@@ -59,27 +58,27 @@ namespace rssnews.Controllers
         [HttpGet("signin")]
         public IActionResult SignIn([FromQuery(Name = "ReturnUrl")] string? returnUrl = null)
         {
-            return Inertia.Render("Signin", new { ReturnUrl = returnUrl });
+            return Inertia("Signin", new { ReturnUrl = returnUrl });
         }
         [HttpGet("failed")]
         public IActionResult Failed()
         {
-            return Inertia.Render("Failure");
+            return Inertia("Failure");
         }
         [HttpGet("view")]
         public IActionResult ViewXML()
         {
-            return Inertia.Render("Feed");
+            return Inertia("Feed");
         }
         [HttpGet("view/{CategoryId}")]
         public IActionResult ViewXMLByCategory(string CategoryId)
         {
-            return Inertia.Render("Feed", new { categoryId = CategoryId });
+            return Inertia("Feed", new { CategoryId });
         }
         [HttpGet("news-feed")]
         public IActionResult NewsFeed([FromQuery] string? categoryId = null)
         {
-            return Inertia.Render("NewsFeed", new { categoryId });
+            return Inertia("NewsFeed", new { CategoryId = categoryId });
         }
         [HttpGet("feed-xml")]
         [Produces("application/rss+xml")]
@@ -87,14 +86,9 @@ namespace rssnews.Controllers
         {
             try
             {
-                // สร้าง Request DTO เพื่อส่งให้ ServiceStack Service
+
                 var request = new GetRSSFeed { CategoryName = categoryName };
-
-                // เรียกใช้ ServiceStack Service โดยตรงผ่าน HostContext
-                // ServiceStack จะจัดการ Dependency Injection ของ Service ให้เอง
                 using var service = HostContext.ResolveService<RSSFeedService>((IRequest)HttpContext);
-
-                // เรียก method ใน service และ return ผลลัพธ์ (ซึ่งเป็น HttpResult ที่มี XML)
                 var response = service.Get(request);
 
                 return response as IActionResult ?? new EmptyResult();

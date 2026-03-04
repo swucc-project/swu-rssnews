@@ -1,1 +1,470 @@
-secrets/db_password.txt
+## .NET Core / Visual Studio
+## Get latest from `dotnet new gitignore`
+
+# ═══════════════════════════════════════════════════════════
+# Build Output Directories
+# ═══════════════════════════════════════════════════════════
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+
+# Build-specific outputs
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+
+# ═══════════════════════════════════════════════════════════
+# User-specific files
+# ═══════════════════════════════════════════════════════════
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ═══════════════════════════════════════════════════════════
+# IDE and Editor Configurations
+# ═══════════════════════════════════════════════════════════
+
+# Visual Studio
+.vs/
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# JetBrains Rider / IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/dictionaries
+.idea/**/shelf
+*.sln.iml
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# JustCode
+.JustCode
+
+# CodeRush
+.cr/personal
+
+# Visual Studio History
+.localhistory/
+.vshistory/
+
+# ═══════════════════════════════════════════════════════════
+# Build and Compilation Files
+# ═══════════════════════════════════════════════════════════
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.tlog
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Visual C++ cache
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# ═══════════════════════════════════════════════════════════
+# Test Results
+# ═══════════════════════════════════════════════════════════
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NUnit
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# Benchmark
+BenchmarkDotNet.Artifacts/
+
+# Chutzpah
+_Chutzpah*
+
+# ═══════════════════════════════════════════════════════════
+# Code Coverage and Analysis
+# ═══════════════════════════════════════════════════════════
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# DotCover
+*.dotCover
+
+# AxoCover
+.axoCover/*
+!.axoCover/settings.json
+
+# Coverlet
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# Visual Studio code coverage
+*.coverage
+*.coveragexml
+
+# NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# MightyMoose
+*.mm.*
+AutoTest.Net/
+
+# OpenCover
+OpenCover/
+
+# ═══════════════════════════════════════════════════════════
+# .NET Specific
+# ═══════════════════════════════════════════════════════════
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+
+# Tye
+.tye/
+
+# StyleCop
+StyleCopReport.xml
+
+# Fody
+FodyWeavers.xsd
+
+# Mono
+mono_crash.*
+
+# ═══════════════════════════════════════════════════════════
+# NuGet Packages
+# ═══════════════════════════════════════════════════════════
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# ═══════════════════════════════════════════════════════════
+# Publishing and Deployment
+# ═══════════════════════════════════════════════════════════
+
+# Click-Once
+publish/
+
+# Publish Web Output
+*.[Pp]ublish.xml
+*.azurePubxml
+*.pubxml
+*.publishproj
+
+# Microsoft Azure
+PublishScripts/
+csx/
+*.build.csdef
+ecf/
+rcf/
+
+# Windows Store
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+_pkginfo.txt
+*.appx
+*.appxbundle
+*.appxupload
+
+# ═══════════════════════════════════════════════════════════
+# Documentation
+# ═══════════════════════════════════════════════════════════
+DocProject/buildhelp/
+DocProject/Help/*.HxT
+DocProject/Help/*.HxC
+DocProject/Help/*.hhc
+DocProject/Help/*.hhk
+DocProject/Help/*.hhp
+DocProject/Help/Html2
+DocProject/Help/html
+
+# ═══════════════════════════════════════════════════════════
+# Special Tools and Add-ons
+# ═══════════════════════════════════════════════════════════
+
+# Installshield
+[Ee]xpress/
+
+# TeamCity
+_TeamCity*
+
+# Python Tools (PTVS)
+__pycache__/
+*.pyc
+
+# Cake
+tools/**
+!tools/packages.config
+
+# Tabs Studio
+*.tss
+
+# Telerik JustMock
+*.jmconfig
+
+# BizTalk
+*.btp.cs
+*.btm.cs
+*.odx.cs
+*.xsd.cs
+
+# Azure Stream Analytics
+ASALocalRun/
+
+# MSBuild Binary Log
+*.binlog
+
+# NVidia Nsight
+*.nvuser
+
+# MFractors (Xamarin)
+.mfractor/
+
+# BeatPulse
+healthchecksdb
+
+# Ionide (F# VS Code)
+.ionide/
+
+# Migration Backup
+MigrationBackup/
+
+# ═══════════════════════════════════════════════════════════
+# Visual Studio for Mac
+# ═══════════════════════════════════════════════════════════
+Makefile.in
+*.userprefs
+*.usertasks
+config.make
+config.status
+aclocal.m4
+install-sh
+autom4te.cache/
+*.tar.gz
+tarballs/
+test-results/
+
+# Mac bundle
+*.dmg
+*.app
+
+# ═══════════════════════════════════════════════════════════
+# Operating System Files
+# ═══════════════════════════════════════════════════════════
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ═══════════════════════════════════════════════════════════
+# Windows Installer files
+# ═══════════════════════════════════════════════════════════
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# ═══════════════════════════════════════════════════════════
+# Web and Frontend (Sass/Vite/Node)
+# ═══════════════════════════════════════════════════════════
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite
+dist/
+dist-ssr/
+.vite/
+
+# Sass
+.sass-cache/
+
+# Frontend build outputs
+wwwroot/volume/
+wwwroot/dist/
+
+# ═══════════════════════════════════════════════════════════
+# Custom Project Files
+# ═══════════════════════════════════════════════════════════
+
+# Environment files
+.env
+.env.local
+.env.*.local
+secrets/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.mdf
+*.ldf
+
+# Logs
+*.log
+*.log.*
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.local
+tmp/
+temp/
+
+# Backup files
+*.bak
+*.backup
+*.old
+backup_*/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+ssl/
+
+# Editor swap files
+*.swp
+*.swo
+
+# ═══════════════════════════════════════════════════════════
+# GraphQL and gRPC
+# ═══════════════════════════════════════════════════════════
+
+# GraphQL schema outputs
+apollo/schema.graphql
+shared/graphql/schema.graphql
+
+# Generated C# gRPC files
+**/Grpc/*.cs
+**/Grpc/**/*.cs
+!**/Grpc/.gitkeep
+shared/grpc/*.cs
+shared/grpc/**/*.cs
+**/Grpc/Protos/
+
+# Protobuf compilation output
+protobuf-compilation/**
+**/protobuf-compilation/**
+
+# ═══════════════════════════════════════════════════════════
+# Docker Volumes (if mounted locally)
+# ═══════════════════════════════════════════════════════════
+**/DataProtection-Keys/
+
+# ═══════════════════════════════════════════════════════════
+# KEEP THESE FILES
+# ═══════════════════════════════════════════════════════════
+# Important: Keep .proto definition files
+!**/protobuf/*.proto
+!**/protobuf/**/*.proto
+
+# Keep placeholder files
+!**/.gitkeep
+!**/.gitignore
+obj/

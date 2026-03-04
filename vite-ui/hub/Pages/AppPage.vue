@@ -77,8 +77,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useAuthStore } from '@hub/auth';
+import { ref, watch } from 'vue';
+import { useAuthStore } from '@hub/stores/auth';
 import swuLogo from '~images/swu_logo.png';
 
 const props = defineProps<{
@@ -91,10 +91,17 @@ const password = ref('');
 const authStore = useAuthStore();
 
 const manipulateLogin = async () => {
+    if (authStore.loading) return;
+
     await authStore.login(
         buasriId.value, 
         password.value, 
         props.returnUrl || null
     );
 };
+
+watch([buasriId, password], () => {
+        authStore.clearError();
+    }
+);
 </script>

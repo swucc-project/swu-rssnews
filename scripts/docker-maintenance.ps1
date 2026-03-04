@@ -1,60 +1,65 @@
 # docker-maintenance.ps1
-# รวมคำสั่งบำรุงรักษา Docker
-
 param(
-    [Parameter(Mandatory=$false)]
-    [ValidateSet('Status','Logs','Restart','Rebuild','Backup')]
+    [ValidateSet('Status', 'Logs', 'Restart', 'Rebuild', 'Backup')]
     [string]$Action = 'Status'
 )
 
 $ProjectName = "swu-rssnews"
+$compose = (docker compose version 2>$null) ? "docker compose" : "docker-compose"
 
 switch ($Action) {
     'Status' {
-        Write-Host "`n📊 Project Status" -ForegroundColor Cyan
-        Write-Host "=" * 60
-        
-        Write-Host "`n🐳 Containers:" -ForegroundColor Yellow
-        docker-compose ps
-        
-        Write-Host "`n💾 Volumes:" -ForegroundColor Yellow
+        Invoke-Expression "$compose ps"
+        Write-Host "`n📊 Docker Volumes:" -ForegroundColor Cyan
         docker volume ls --filter "name=$ProjectName"
-        
-        Write-Host "`n🌐 Networks:" -ForegroundColor Yellow
+        Write-Host "`n🌐 Docker Networks:" -ForegroundColor Cyan
         docker network ls --filter "name=$ProjectName"
-        
-        Write-Host "`n💿 Disk Usage:" -ForegroundColor Yellow
+        Write-Host "`n💾 Disk Usage:" -ForegroundColor Cyan
         docker system df
     }
-    
     'Logs' {
-        Write-Host "📜 Viewing logs (Ctrl+C to exit)..." -ForegroundColor Cyan
-        docker-compose logs -f --tail=100
+        Invoke-Expression "$compose logs -f --tail=100"
     }
-    
     'Restart' {
-        Write-Host "🔄 Restarting services..." -ForegroundColor Yellow
-        docker-compose restart
-        Write-Host "✅ Restarted" -ForegroundColor Green
+        Invoke-Expression "$compose restart"
     }
-    
     'Rebuild' {
-        Write-Host "🔨 Rebuilding services..." -ForegroundColor Yellow
-        docker-compose up -d --build
-        Write-Host "✅ Rebuilt" -ForegroundColor Green
+        Invoke-Expression "$compose up -d --build"
     }
-    
+    # ✅ แก้ไขส่วน Backup ให้รองรับ Volume ใหม่ทั้ง 4 ตัว
     'Backup' {
-        $backupDate = Get-Date -Format "yyyyMMdd-HHmmss"
-        $backupPath = ".\backups\$backupDate"
+        $date = Get-Date -Format yyyyMMdd-HHmmss
+        $backupRoot = ".\backups\$date"
+        New-Item $backupRoot -ItemType Directory -Force | Out-Null
         
-        Write-Host "💾 Creating backup at $backupPath..." -ForegroundColor Cyan
-        
-        New-Item -Path $backupPath -ItemType Directory -Force | Out-Null
-        
-        # Export volumes
-        docker run --rm -v swu-rssnews_rssdata:/data -v ${PWD}/backups/${backupDate}:/backup alpine tar czf /backup/rssdata.tar.gz -C /data .
-        
-        Write-Host "✅ Backup created" -ForegroundColor Green
+        Write-Host "📦 Starting Backup to: $backupRoot" -ForegroundColor Yellow
+
+        # รายชื่อ Volume ใหม่ที่ต้อง Backup
+        $volumes = @("mssql-data", "mssql-logs", "mssql-backups", "mssql-system")
+
+        foreach ($vol in $volumes) {
+            $fullVolName = "${ProjectName}_${vol}"
+            
+            # ตรวจสอบว่ามี Volume อยู่จริงไหม
+            if (docker volume ls -q -f name=$fullVolName) {
+                Write-Host "  backing up $vol..." -NoNewline
+                
+                try {
+                    docker run --rm `
+                        -v "${fullVolName}:/source:ro" `
+                        -v "${PWD}\backups\${date}:/backup" `
+                        alpine tar czf "/backup/${vol}.tar.gz" -C /source .
+                    
+                    Write-Host " Done" -ForegroundColor Green
+                }
+                catch {
+                    Write-Host " Failed" -ForegroundColor Red
+                }
+            }
+            else {
+                Write-Host "  ⚠️ Volume $fullVolName not found, skipping." -ForegroundColor DarkGray
+            }
+        }
+        Write-Host "✅ All backups completed." -ForegroundColor Green
     }
 }

@@ -2,71 +2,71 @@ syntax = "proto3";
 
 package rssfeed;
 
-option csharp_namespace = "SwuNews.gRPC";
+option csharp_namespace = "SwuNews";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
 service RSSItemService {
-    rpc AddRSSItem (AddRSSItemRequest) returns (Item);
-    rpc GetRSSItems (google.protobuf.Empty) returns (GetRSSItemResponse);
-    rpc GetRSSItemByID (GetRSSItemsRequest) returns (Item);
-    rpc UpdateRSSItem (UpdateRSSItemRequest) returns (Item);
-    rpc DeleteRSSItem (DeleteRSSItemRequest) returns (DeleteRSSItemResponse);
+  rpc AddRSSItem (AddRSSItemRequest) returns (Item);
+  rpc GetRSSItems (google.protobuf.Empty) returns (GetRSSItemsResponse);
+  rpc GetRSSItemByID (GetRSSItemRequest) returns (Item);
+  rpc UpdateRSSItem (UpdateRSSItemRequest) returns (Item);
+  rpc DeleteRSSItem (DeleteRSSItemRequest) returns (DeleteRSSItemResponse);
 }
 
 message Item {
-    string item_id = 1;
-    string title = 2;
-    string link = 3;
-    string description = 4;
-    google.protobuf.Timestamp published_date = 5;
-    Category category = 6;
-    Author author = 7;
+  string item_id = 1;
+  string title = 2;
+  string link = 3;
+  string description = 4;
+  google.protobuf.Timestamp published_date = 5;
+  Category category = 6;
+  Author author = 7;
 }
 
 message Category {
-    int32 id = 1;
-    string name = 2;
+  int32 id = 1;
+  string name = 2;
 }
 
 message Author {
-    string author_id = 1;
-    string firstname = 2;
-    string lastname = 3;
+  string author_id = 1;
+  string firstname = 2;
+  string lastname = 3;
 }
 
 message AddRSSItemRequest {
-    string title = 1;
-    string link = 2;
-    string description = 3;
-    google.protobuf.Timestamp published_date = 4;
-    Category category = 5;
-    Author author = 6;
+  string title = 1;
+  string link = 2;
+  string description = 3;
+  google.protobuf.Timestamp published_date = 4;
+  Category category = 5;
+  Author author = 6;
 }
 
-message GetRSSItemsRequest {
-    string item_id = 1;
+message GetRSSItemRequest {
+  string item_id = 1;
 }
 
-message GetRSSItemResponse {
-    repeated Item items = 1;
+message GetRSSItemsResponse {
+  repeated Item items = 1;
 }
 
 message UpdateRSSItemRequest {
-    string item_id = 1;
-    string title = 2;
-    string link = 3;
-    string description = 4;
-    google.protobuf.Timestamp published_date = 5;
-    Category category = 6;
-    Author author = 7;
+  string item_id = 1;
+  string title = 2;
+  string link = 3;
+  string description = 4;
+  google.protobuf.Timestamp published_date = 5;
+  Category category = 6;
+  Author author = 7;
 }
 
 message DeleteRSSItemRequest {
-    string item_id = 1;
+  string item_id = 1;
 }
 
 message DeleteRSSItemResponse {
-    bool success = 1;
+  bool success = 1;
 }
