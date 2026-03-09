@@ -18,33 +18,28 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 # Port configurations
 $DevPorts = @{
-    "ASP.NET Core API"   = @{
+    "ASP.NET Core API" = @{
         Port     = 5000 
         Protocol = "TCP"
         Profile  = @("Domain", "Private")
     }
-    "Vite Dev Server"    = @{
+    "Vite Dev Server"  = @{
         Port     = 5173
         Protocol = "TCP"
         Profile  = @("Domain", "Private")
     }
-    "Nginx Dev HTTP"     = @{
+    "Nginx Dev HTTP"   = @{
         Port     = 8080
         Protocol = "TCP"
         Profile  = @("Domain", "Private")
     }
-    "Vite HMR WebSocket" = @{
-        Port     = 24678
-        Protocol = "TCP"
-        Profile  = @("Domain", "Private")
-    }
-    "SQL Server"         = @{
+    "SQL Server"       = @{
         Port          = 1433
         Protocol      = "TCP"
         Profile       = @("Domain", "Private")
         RemoteAddress = @("127.0.0.1,::1,LocalSubnet")
     }
-    "OpenSSH Server"     = @{
+    "OpenSSH Server"   = @{
         Port          = 22
         Protocol      = "TCP"
         Profile       = @("Domain", "Private")

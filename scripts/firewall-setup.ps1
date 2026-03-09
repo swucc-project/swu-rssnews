@@ -22,7 +22,6 @@ $DevPorts = @{
     "ASP.NET Core API"       = 5000
     "Vite Dev Server"        = 5173
     "Nginx Dev HTTP"         = 8080
-    "Vite HMR WebSocket"     = 24678
     "SQL Server (Localhost)" = 1433
     "OpenSSH Server"         = 22
     "Samba Server"           = 445

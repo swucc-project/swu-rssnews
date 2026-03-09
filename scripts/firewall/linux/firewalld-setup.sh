@@ -16,7 +16,6 @@ declare -A DEV_PORTS=(
     ["ASP.NET Core API"]="5000/tcp"
     ["Vite Dev Server"]="5173/tcp"
     ["Nginx Dev HTTP"]="8080/tcp"
-    ["Vite HMR WebSocket"]="24678/tcp"
     ["SQL Server"]="1433/tcp"
     ["OpenSSH Server"]="22/tcp"
 )

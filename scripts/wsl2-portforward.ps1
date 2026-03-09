@@ -2,7 +2,7 @@
 # Enhanced WSL2 Port Forwarding with Multi-Distro Support
 
 param(
-    [int[]]$Ports = @(5000, 5173, 8080, 1433, 24678),
+    [int[]]$Ports = @(5000, 5173, 8080, 1433),
     
     [switch]$IncludeSSH,
     
